@@ -1,0 +1,24 @@
+{
+    "hostname" : "",
+    "hostport" : ":9090",
+    "active" : "go-cache",
+    "Go-Cache" : {
+        "drivername" : "go-cache",
+        "expiration" : 3,
+        "cleanup" : 30
+    },
+    "MySQL" : {
+        "drivername" : "mysql",
+        "connection" : "root:devStation@tcp(127.0.0.1:3306)/"
+    },
+    "PostGreSQL" : {
+        "drivername" : "postgres",
+        "host" : "127.0.0.1",
+        "port" : 5432,
+        "user" : "postgres"
+    },
+    "Messages" : {
+        "Congrats" : "Congrats! That is correct",
+        "TryAgain" : "Nice try! Better luck on the next question"
+    }
+}
