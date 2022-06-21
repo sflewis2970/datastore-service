@@ -23,7 +23,7 @@ func Status(rw http.ResponseWriter, r *http.Request) {
 	log.Print("Getting active datastore driver from config data...")
 
 	// DB Model
-	dbModel := models.NewDBModel(cfgData.ActiveDriver)
+	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
 
 	sResponse.Timestamp = common.GetFormattedTime(time.Now(), "Mon Jan 2 15:04:05 2006")
 	if dbModel != nil {
@@ -47,8 +47,8 @@ func Status(rw http.ResponseWriter, r *http.Request) {
 }
 
 func InsertQuestion(rw http.ResponseWriter, r *http.Request) {
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
+	ctrlr.dbMutex.Lock()
+	defer ctrlr.dbMutex.Unlock()
 
 	// Display a log message
 	log.Print("client requested insert action...")
@@ -59,7 +59,7 @@ func InsertQuestion(rw http.ResponseWriter, r *http.Request) {
 	// Decode request into JSON format
 	json.NewDecoder(r.Body).Decode(&qRequest)
 
-	dbModel := models.NewDBModel(cfgData.ActiveDriver)
+	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
 	rowsAffected, insertErr := dbModel.InsertQuestion(qRequest)
 
 	var qResponse data.QuestionResponse
@@ -91,8 +91,8 @@ func InsertQuestion(rw http.ResponseWriter, r *http.Request) {
 }
 
 func GetQuestion(rw http.ResponseWriter, r *http.Request) {
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
+	ctrlr.dbMutex.Lock()
+	defer ctrlr.dbMutex.Unlock()
 
 	// Get question ID from query parameter
 	questionID := r.URL.Query().Get("questionid")
@@ -101,7 +101,7 @@ func GetQuestion(rw http.ResponseWriter, r *http.Request) {
 	log.Print("client requested to getquestion...")
 
 	// Connect to database
-	dbModel := models.NewDBModel(cfgData.ActiveDriver)
+	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
 
 	// Get item from database
 	qt, getErr := dbModel.GetQuestion(questionID)
@@ -132,8 +132,8 @@ func GetQuestion(rw http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateQuestion(rw http.ResponseWriter, r *http.Request) {
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
+	ctrlr.dbMutex.Lock()
+	defer ctrlr.dbMutex.Unlock()
 
 	var question data.QuestionRequest
 
@@ -143,7 +143,7 @@ func UpdateQuestion(rw http.ResponseWriter, r *http.Request) {
 	// Decode request into JSON format
 	json.NewDecoder(r.Body).Decode(&question)
 
-	dbModel := models.NewDBModel(cfgData.ActiveDriver)
+	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
 
 	var qResponse data.QuestionResponse
 	rowsAffected, updateErr := dbModel.UpdateQuestion(question)
@@ -169,8 +169,8 @@ func UpdateQuestion(rw http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteQuestion(rw http.ResponseWriter, r *http.Request) {
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
+	ctrlr.dbMutex.Lock()
+	defer ctrlr.dbMutex.Unlock()
 
 	// Get question ID from query parameter
 	questionID := r.URL.Query().Get("questionid")
@@ -178,7 +178,7 @@ func DeleteQuestion(rw http.ResponseWriter, r *http.Request) {
 	// Display a log message
 	log.Print("data received from client...")
 
-	dbModel := models.NewDBModel(cfgData.ActiveDriver)
+	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
 
 	rowsAffected, delErr := dbModel.DeleteQuestion(questionID)
 
@@ -204,8 +204,8 @@ func DeleteQuestion(rw http.ResponseWriter, r *http.Request) {
 }
 
 func CheckAnswer(rw http.ResponseWriter, r *http.Request) {
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
+	ctrlr.dbMutex.Lock()
+	defer ctrlr.dbMutex.Unlock()
 
 	// Answer Request
 	var aRequest data.AnswerRequest
@@ -217,7 +217,7 @@ func CheckAnswer(rw http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&aRequest)
 
 	// use dbModel to execute SQL command
-	dbModel := models.NewDBModel(cfgData.ActiveDriver)
+	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
 	qt, getErr := dbModel.GetQuestion(aRequest.QuestionID)
 
 	// Build AnswerResponse message
@@ -241,10 +241,10 @@ func CheckAnswer(rw http.ResponseWriter, r *http.Request) {
 		// Build Response Message
 		if qt.Answer == aRequest.Response {
 			aResponse.Correct = true
-			aResponse.Message = cfgData.Messages.CongratsMsg
+			aResponse.Message = ctrlr.cfgData.Messages.CongratsMsg
 		} else {
 			aResponse.Correct = false
-			aResponse.Message = cfgData.Messages.TryAgainMsg
+			aResponse.Message = ctrlr.cfgData.Messages.TryAgainMsg
 		}
 
 		// delete record from DB once the client answers the question
