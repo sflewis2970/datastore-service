@@ -150,7 +150,12 @@ func GetMySQLModel() *dbModel {
 		log.Print("Creating MySQL database model")
 
 		mySQLModel = new(dbModel)
-		mySQLModel.cfgData = config.GetConfig().GetConfigData()
+		cfg, getErr := config.GetConfig()
+		if getErr != nil {
+			log.Fatal("Error getting config info: ", getErr)
+		}
+
+		mySQLModel.cfgData = cfg.GetConfigData()
 	}
 
 	return mySQLModel

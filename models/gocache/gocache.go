@@ -91,7 +91,12 @@ func (dbm *dbModel) DeleteQuestion(questionID string) (int64, error) {
 func GetGoCacheModel() *dbModel {
 	if goCacheModel == nil {
 		goCacheModel = new(dbModel)
-		goCacheModel.cfgData = config.GetConfig().GetConfigData()
+		cfg, getErr := config.GetConfig()
+		if getErr != nil {
+			log.Fatal("Error getting config info: ", getErr)
+		}
+
+		goCacheModel.cfgData = cfg.GetConfigData()
 
 		log.Print("Creating in-memory map to store data")
 		goCacheModel.memCache = cache.New(time.Duration(goCacheModel.cfgData.GoCache.DefaultExpiration)*time.Minute, time.Duration(goCacheModel.cfgData.GoCache.CleanupInterval)*time.Minute)
