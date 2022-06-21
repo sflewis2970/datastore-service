@@ -86,13 +86,14 @@ func TestNewSDBModel(t *testing.T) {
 	// Test cases
 	testCases := []struct {
 		testName   string
+		testActive bool
 		driverName string
 	}{
-		{testName: "GoCache driver test", driverName: GOCACHE_DRIVER},
-		{testName: "MySQL driver test", driverName: MYSQL_DRIVER},
-		{testName: "PostgreSQL driver test", driverName: POSTGRESQL_DRIVER},
-		{testName: "No driver test", driverName: ""},
-		{testName: "Bad driver test", driverName: "baddrivername"},
+		{testName: "GoCache driver test", testActive: true, driverName: GOCACHE_DRIVER},
+		{testName: "MySQL driver test", testActive: false, driverName: MYSQL_DRIVER},
+		{testName: "PostgreSQL driver test", testActive: false, driverName: POSTGRESQL_DRIVER},
+		{testName: "No driver test", testActive: true, driverName: ""},
+		{testName: "Bad driver test", testActive: true, driverName: "baddrivername"},
 	}
 
 	for _, tc := range testCases {
@@ -105,9 +106,13 @@ func TestNewSDBModel(t *testing.T) {
 			case "mysql":
 				fallthrough
 			case "postgres":
-				checkDBDriver(t, tc.driverName, gotDBModel)
+				if tc.testActive {
+					checkDBDriver(t, tc.driverName, gotDBModel)
+				}
 			default:
-				checkInvalidDriver(t, tc.driverName, gotDBModel)
+				if tc.testActive {
+					checkInvalidDriver(t, tc.driverName, gotDBModel)
+				}
 			}
 		})
 	}
