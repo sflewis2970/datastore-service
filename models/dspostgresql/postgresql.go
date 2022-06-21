@@ -150,7 +150,12 @@ func GetPostGreSQLModel() *dbModel {
 		log.Print("Creating PostgreSQL database model")
 
 		postgreSQLModel = new(dbModel)
-		postgreSQLModel.cfgData = config.GetConfig().GetConfigData()
+		cfg, getErr := config.GetConfig()
+		if getErr != nil {
+			log.Fatal("Error getting config info: ", getErr)
+		}
+
+		postgreSQLModel.cfgData = cfg.GetConfigData()
 	}
 
 	return postgreSQLModel
