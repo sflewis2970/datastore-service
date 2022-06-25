@@ -46,7 +46,7 @@ func Status(rw http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(rw).Encode(sResponse)
 }
 
-func InsertQuestion(rw http.ResponseWriter, r *http.Request) {
+func Insert(rw http.ResponseWriter, r *http.Request) {
 	ctrlr.dbMutex.Lock()
 	defer ctrlr.dbMutex.Unlock()
 
@@ -60,7 +60,7 @@ func InsertQuestion(rw http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&qRequest)
 
 	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
-	rowsAffected, insertErr := dbModel.InsertQuestion(qRequest)
+	rowsAffected, insertErr := dbModel.Insert(qRequest)
 
 	var qResponse data.QuestionResponse
 
@@ -79,18 +79,23 @@ func InsertQuestion(rw http.ResponseWriter, r *http.Request) {
 			log.Print("rows affected: ", rowsAffected)
 		}
 
+		// Build QuestionResponse
+		qResponse.QuestionID = qRequest.QuestionID
+		qResponse.Question = qRequest.Question
+		qResponse.Category = qRequest.Category
+
 		// Display a log message
 		log.Print("sending response to client...")
 
 		// Build QuestionResponse message
-		qResponse.Message = "Add question record to the database"
+		qResponse.Message = "Added question to the datastore"
 	}
 
 	// Write JSON to stream
 	json.NewEncoder(rw).Encode(qResponse)
 }
 
-func GetQuestion(rw http.ResponseWriter, r *http.Request) {
+func Get(rw http.ResponseWriter, r *http.Request) {
 	ctrlr.dbMutex.Lock()
 	defer ctrlr.dbMutex.Unlock()
 
@@ -104,7 +109,7 @@ func GetQuestion(rw http.ResponseWriter, r *http.Request) {
 	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
 
 	// Get item from database
-	qt, getErr := dbModel.GetQuestion(questionID)
+	qt, getErr := dbModel.Get(questionID)
 
 	var qResponse data.QuestionResponse
 	if getErr != nil {
@@ -131,7 +136,7 @@ func GetQuestion(rw http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(rw).Encode(qResponse)
 }
 
-func UpdateQuestion(rw http.ResponseWriter, r *http.Request) {
+func Update(rw http.ResponseWriter, r *http.Request) {
 	ctrlr.dbMutex.Lock()
 	defer ctrlr.dbMutex.Unlock()
 
@@ -146,7 +151,7 @@ func UpdateQuestion(rw http.ResponseWriter, r *http.Request) {
 	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
 
 	var qResponse data.QuestionResponse
-	rowsAffected, updateErr := dbModel.UpdateQuestion(question)
+	rowsAffected, updateErr := dbModel.Update(question)
 	if updateErr != nil {
 		qResponse.Error = updateErr.Error()
 
@@ -168,7 +173,7 @@ func UpdateQuestion(rw http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(rw).Encode(qResponse)
 }
 
-func DeleteQuestion(rw http.ResponseWriter, r *http.Request) {
+func Delete(rw http.ResponseWriter, r *http.Request) {
 	ctrlr.dbMutex.Lock()
 	defer ctrlr.dbMutex.Unlock()
 
@@ -180,7 +185,7 @@ func DeleteQuestion(rw http.ResponseWriter, r *http.Request) {
 
 	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
 
-	rowsAffected, delErr := dbModel.DeleteQuestion(questionID)
+	rowsAffected, delErr := dbModel.Delete(questionID)
 
 	var qResponse data.QuestionResponse
 	if delErr != nil {
@@ -218,7 +223,7 @@ func CheckAnswer(rw http.ResponseWriter, r *http.Request) {
 
 	// use dbModel to execute SQL command
 	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
-	qt, getErr := dbModel.GetQuestion(aRequest.QuestionID)
+	qt, getErr := dbModel.Get(aRequest.QuestionID)
 
 	// Build AnswerResponse message
 	var aResponse data.AnswerResponse
@@ -249,7 +254,7 @@ func CheckAnswer(rw http.ResponseWriter, r *http.Request) {
 
 		// delete record from DB once the client answers the question
 		// Whether the answer is correct or not
-		rowsAffected, delErr := dbModel.DeleteQuestion(aRequest.QuestionID)
+		rowsAffected, delErr := dbModel.Delete(aRequest.QuestionID)
 		if delErr != nil {
 			aResponse.Error = delErr.Error()
 
