@@ -14,17 +14,26 @@ type controller struct {
 
 var ctrlr *controller
 
-func InitializeController() {
+func Initialize(args ...string) {
+	if len(args) == 0 {
+		log.Print("Adding an empty string...")
+		args = append(args, "")
+	}
+
 	if ctrlr == nil {
 		ctrlr = new(controller)
 
 		// Get config object
-		cfg, getErr := config.GetConfig()
-		if getErr != nil {
-			log.Fatal("Error getting config")
+		cfg, getCfgErr := config.Get()
+		if getCfgErr != nil {
+			log.Fatal("Error getting config: ", getCfgErr)
 		}
 
-		// Load config data into property
-		ctrlr.cfgData = cfg.GetConfigData()
+		// Load config data
+		var getCfgDataErr error
+		ctrlr.cfgData, getCfgDataErr = cfg.GetData(args[0])
+		if getCfgDataErr != nil {
+			log.Fatal("Error getting config data: ", getCfgDataErr)
+		}
 	}
 }
