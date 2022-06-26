@@ -35,6 +35,10 @@ const (
 	POSTGRES_HOST      string = "postgres_host"
 	POSTGRES_PORT      string = "postgres_port"
 	POSTGRES_USER      string = "postgres_user"
+
+	// Response Messages
+	CONGRATS string = "congrats"
+	TRYAGAIN string = "tryagain"
 )
 
 type GoCache struct {
@@ -176,6 +180,10 @@ func (c *config) getConfigEnv() error {
 		}
 		c.cfgData.PostGreSQL.User = os.Getenv(POSTGRES_USER)
 	}
+
+	// Set response messages
+	c.cfgData.Messages.CongratsMsg = os.Getenv(CONGRATS)
+	c.cfgData.Messages.TryAgainMsg = os.Getenv(TRYAGAIN)
 
 	return nil
 }
