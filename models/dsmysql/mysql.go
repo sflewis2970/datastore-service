@@ -173,21 +173,16 @@ func GetMySQLModel() *dbModel {
 	if mySQLModel == nil {
 		log.Print("Creating MySQL database model")
 
+		// Initialize MySQL database mnodel
 		mySQLModel = new(dbModel)
-		cfg, getErr := config.Get()
-		if getErr != nil {
-			log.Print(MYSQL_DB_NAME_MSG+MYSQL_GET_CONFIG_ERROR, getErr)
-			return nil
-		}
 
 		// Load config data
 		var getCfgDataErr error
-		mySQLModel.cfgData, getCfgDataErr = cfg.GetData()
+		mySQLModel.cfgData, getCfgDataErr = config.Get().GetData()
 		if getCfgDataErr != nil {
 			log.Print(MYSQL_DB_NAME_MSG+MYSQL_GET_CONFIG_DATA_ERROR, getCfgDataErr)
 			return nil
 		}
-
 	}
 
 	return mySQLModel

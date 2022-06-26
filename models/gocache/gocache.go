@@ -109,16 +109,12 @@ func (dbm *dbModel) Delete(questionID string) (int64, error) {
 
 func GetGoCacheModel() *dbModel {
 	if goCacheModel == nil {
+		// Initialize go-cache in-memory cache model
 		goCacheModel = new(dbModel)
-		cfg, getCfgErr := config.Get()
-		if getCfgErr != nil {
-			log.Print(GOCACHE_DB_NAME_MSG+GOCACHE_GET_CONFIG_ERROR, getCfgErr)
-			return nil
-		}
 
 		// Load config data
 		var getCfgDataErr error
-		goCacheModel.cfgData, getCfgDataErr = cfg.GetData()
+		goCacheModel.cfgData, getCfgDataErr = config.Get().GetData()
 		if getCfgDataErr != nil {
 			log.Print(GOCACHE_DB_NAME_MSG+GOCACHE_GET_CONFIG_DATA_ERROR, getCfgDataErr)
 			return nil

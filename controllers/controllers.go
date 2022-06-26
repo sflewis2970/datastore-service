@@ -23,16 +23,9 @@ func Initialize(args ...string) {
 	if ctrlr == nil {
 		ctrlr = new(controller)
 
-		// Get config object
-		cfg, getCfgErr := config.Get()
-		if getCfgErr != nil {
-			log.Print("Error getting config: ", getCfgErr)
-			return
-		}
-
 		// Load config data
 		var getCfgDataErr error
-		ctrlr.cfgData, getCfgDataErr = cfg.GetData(args[0])
+		ctrlr.cfgData, getCfgDataErr = config.Get().GetData(args[0])
 		if getCfgDataErr != nil {
 			log.Print("Error getting config data: ", getCfgDataErr)
 			return
