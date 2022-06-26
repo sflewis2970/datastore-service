@@ -10,6 +10,23 @@ import (
 	"github.com/sflewis2970/datastore-service/models/data"
 )
 
+const (
+	POSTGRESQL_DB_NAME_MSG string = "POSTGRESQL: "
+)
+
+const (
+	POSTGRESQL_GET_CONFIG_ERROR      string = "Getting config error...: "
+	POSTGRESQL_GET_CONFIG_DATA_ERROR string = "Getting config data error...: "
+	POSTGRESQL_OPEN_ERROR            string = "Error opening database..."
+	POSTGRESQL_INSERT_ERROR          string = "Error inserting record..."
+	POSTGRESQL_GET_ERROR             string = "Error getting record..."
+	POSTGRESQL_UPDATE_ERROR          string = "Error updating record..."
+	POSTGRESQL_DELETE_ERROR          string = "Error deleting record..."
+	POSTGRESQL_RESULTS_ERROR         string = "Error getting results...: "
+	POSTGRESQL_ROWS_AFFECTED_ERROR   string = "Error getting rows affected...: "
+	POSTGRESQL_PING_ERROR            string = "Error pinging database server..."
+)
+
 var postgreSQLModel *dbModel
 
 type dbModel struct {
@@ -25,7 +42,7 @@ func (dbm *dbModel) Open(driverName string) (*sql.DB, error) {
 	db, openErr := sql.Open(driverName, dataSourceName)
 
 	if openErr != nil {
-		log.Print("Error opening database server: ", openErr.Error())
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_OPEN_ERROR, openErr.Error())
 		return nil, openErr
 	}
 
@@ -34,15 +51,16 @@ func (dbm *dbModel) Open(driverName string) (*sql.DB, error) {
 
 // Ping database server by verifying the database connection is active
 func (dbm *dbModel) Ping() error {
-	db, openErr := dbm.Open(dbm.cfgData.PostGreSQL.DriverName)
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_OPEN_ERROR, openErr.Error())
 		return openErr
 	}
 	defer db.Close()
 
 	pingErr := db.Ping()
 	if openErr != nil {
-		log.Print("Error pinging database server")
+		log.Print(POSTGRESQL_DB_NAME_MSG + POSTGRESQL_PING_ERROR)
 		return pingErr
 	}
 
@@ -50,9 +68,10 @@ func (dbm *dbModel) Ping() error {
 }
 
 // Insert a single record into table
-func (dbm *dbModel) InsertQuestion(qRequest data.QuestionRequest) (int64, error) {
-	db, openErr := dbm.Open(dbm.cfgData.PostGreSQL.DriverName)
+func (dbm *dbModel) Insert(qRequest data.QuestionRequest) (int64, error) {
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_OPEN_ERROR, openErr.Error())
 		return data.RESULTS_DEFAULT, openErr
 	}
 	defer db.Close()
@@ -61,13 +80,13 @@ func (dbm *dbModel) InsertQuestion(qRequest data.QuestionRequest) (int64, error)
 	queryStr := "insert into trivia VALUES ($1, $2, $3, $4);"
 	sqlDB, execErr := db.Exec(queryStr, qRequest.QuestionID, qRequest.Question, qRequest.Category, qRequest.Answer)
 	if execErr != nil {
-		log.Print("Error inserting data into database table")
+		log.Print(POSTGRESQL_DB_NAME_MSG + POSTGRESQL_INSERT_ERROR)
 		return data.RESULTS_DEFAULT, execErr
 	}
 
 	rowsAffected, rowsAffectedErr := sqlDB.RowsAffected()
 	if rowsAffectedErr != nil {
-		log.Print("Error getting rows affected: ", rowsAffectedErr.Error())
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_ROWS_AFFECTED_ERROR, rowsAffectedErr.Error())
 		return data.RESULTS_DEFAULT, rowsAffectedErr
 	}
 
@@ -75,9 +94,10 @@ func (dbm *dbModel) InsertQuestion(qRequest data.QuestionRequest) (int64, error)
 }
 
 // Get a single record from table
-func (dbm *dbModel) GetQuestion(questionID string) (data.QuestionTable, error) {
-	db, openErr := dbm.Open(dbm.cfgData.PostGreSQL.DriverName)
+func (dbm *dbModel) Get(questionID string) (data.QuestionTable, error) {
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_OPEN_ERROR, openErr.Error())
 		return data.QuestionTable{}, openErr
 	}
 	defer db.Close()
@@ -88,7 +108,7 @@ func (dbm *dbModel) GetQuestion(questionID string) (data.QuestionTable, error) {
 	queryStr := "SELECT question, category, answer FROM trivia WHERE question_id = $1;"
 	scanErr := db.QueryRow(queryStr, questionID).Scan(&qTable.Question, &qTable.Category, &qTable.Answer)
 	if scanErr != nil && scanErr != sql.ErrNoRows {
-		log.Print("Error getting record from database: ", scanErr.Error())
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_GET_ERROR, scanErr.Error())
 		return data.QuestionTable{}, scanErr
 	}
 
@@ -96,9 +116,10 @@ func (dbm *dbModel) GetQuestion(questionID string) (data.QuestionTable, error) {
 }
 
 // Update a single record in table
-func (dbm *dbModel) UpdateQuestion(qRequest data.QuestionRequest) (int64, error) {
-	db, openErr := dbm.Open(dbm.cfgData.PostGreSQL.DriverName)
+func (dbm *dbModel) Update(qRequest data.QuestionRequest) (int64, error) {
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_OPEN_ERROR, openErr.Error())
 		return data.RESULTS_DEFAULT, openErr
 	}
 	defer db.Close()
@@ -107,13 +128,13 @@ func (dbm *dbModel) UpdateQuestion(qRequest data.QuestionRequest) (int64, error)
 	queryStr := "UPDATE trivia SET question = $2, category = $3, answer = $4 WHERE question_id = $1"
 	sqlDB, execErr := db.Exec(queryStr, qRequest.QuestionID, qRequest.Question, qRequest.Category, qRequest.Answer)
 	if execErr != nil {
-		log.Print("Error getting data from database table")
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_UPDATE_ERROR, execErr.Error())
 		return data.RESULTS_DEFAULT, execErr
 	}
 
 	rowsAffected, rowsAffectedErr := sqlDB.RowsAffected()
 	if rowsAffectedErr != nil {
-		log.Print("Error getting rows affected: ", rowsAffectedErr.Error())
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_ROWS_AFFECTED_ERROR, rowsAffectedErr.Error())
 		return data.RESULTS_DEFAULT, nil
 	}
 
@@ -121,9 +142,10 @@ func (dbm *dbModel) UpdateQuestion(qRequest data.QuestionRequest) (int64, error)
 }
 
 // Delete a single record from table
-func (dbm *dbModel) DeleteQuestion(questionID string) (int64, error) {
-	db, openErr := dbm.Open(dbm.cfgData.PostGreSQL.DriverName)
+func (dbm *dbModel) Delete(questionID string) (int64, error) {
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_OPEN_ERROR, openErr.Error())
 		return data.RESULTS_DEFAULT, openErr
 	}
 	defer db.Close()
@@ -132,13 +154,13 @@ func (dbm *dbModel) DeleteQuestion(questionID string) (int64, error) {
 	queryStr := "DELETE FROM trivia WHERE question_id = $1"
 	sqlDB, execErr := db.Exec(queryStr, questionID)
 	if execErr != nil {
-		log.Print("Error deleting data from database table")
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_DELETE_ERROR, execErr.Error())
 		return data.RESULTS_DEFAULT, execErr
 	}
 
 	rowsAffected, rowsAffectedErr := sqlDB.RowsAffected()
 	if rowsAffectedErr != nil {
-		log.Print("Error getting rows affected: ", rowsAffectedErr.Error())
+		log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_ROWS_AFFECTED_ERROR, rowsAffectedErr.Error())
 		return data.RESULTS_DEFAULT, nil
 	}
 
@@ -150,12 +172,20 @@ func GetPostGreSQLModel() *dbModel {
 		log.Print("Creating PostgreSQL database model")
 
 		postgreSQLModel = new(dbModel)
-		cfg, getErr := config.GetConfig()
-		if getErr != nil {
-			log.Fatal("Error getting config info: ", getErr)
+		cfg, getCfgErr := config.Get()
+		if getCfgErr != nil {
+			log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_GET_CONFIG_ERROR, getCfgErr)
+			return nil
 		}
 
-		postgreSQLModel.cfgData = cfg.GetConfigData()
+		// Load config data
+		var getCfgDataErr error
+		postgreSQLModel.cfgData, getCfgDataErr = cfg.GetData()
+		if getCfgDataErr != nil {
+			log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_GET_CONFIG_DATA_ERROR, getCfgDataErr)
+			return nil
+		}
+
 	}
 
 	return postgreSQLModel
