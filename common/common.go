@@ -15,7 +15,7 @@ func GetFormattedTime(timeNow time.Time, timeFormat string) string {
 func GetWorkingDir() (string, error) {
 	workingDir, getErr := os.Getwd()
 	if getErr != nil {
-		log.Fatal("Error getting working directory...")
+		log.Print("Error getting working directory...")
 		return "", getErr
 	}
 

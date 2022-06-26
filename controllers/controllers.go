@@ -26,14 +26,16 @@ func Initialize(args ...string) {
 		// Get config object
 		cfg, getCfgErr := config.Get()
 		if getCfgErr != nil {
-			log.Fatal("Error getting config: ", getCfgErr)
+			log.Print("Error getting config: ", getCfgErr)
+			return
 		}
 
 		// Load config data
 		var getCfgDataErr error
 		ctrlr.cfgData, getCfgDataErr = cfg.GetData(args[0])
 		if getCfgDataErr != nil {
-			log.Fatal("Error getting config data: ", getCfgDataErr)
+			log.Print("Error getting config data: ", getCfgDataErr)
+			return
 		}
 	}
 }
