@@ -43,6 +43,12 @@ func main() {
 		setCfgEnv()
 	}
 
+	// Get config data
+	cfgData, getCfgDataErr := config.Get().GetData(config.UPDATE_CONFIG_DATA)
+	if getCfgDataErr != nil {
+		log.Fatal("Error getting config data: ", getCfgDataErr)
+	}
+
 	// Initialize controller
 	controllers.Initialize()
 
@@ -51,12 +57,6 @@ func main() {
 
 	// Start Server
 	log.Print("Datastore service is ready...")
-
-	// Get config data
-	cfgData, getCfgDataErr := config.Get().GetData(config.UPDATE_CONFIG_DATA)
-	if getCfgDataErr != nil {
-		log.Fatal("Error getting config data: ", getCfgDataErr)
-	}
 
 	addr := cfgData.HostName + cfgData.HostPort
 	log.Print("The address used the service is: ", addr)
