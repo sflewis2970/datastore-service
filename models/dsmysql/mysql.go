@@ -9,6 +9,23 @@ import (
 	"github.com/sflewis2970/datastore-service/models/data"
 )
 
+const (
+	MYSQL_DB_NAME_MSG string = "MYSQL: "
+)
+
+const (
+	MYSQL_GET_CONFIG_ERROR      string = "Getting config error...: "
+	MYSQL_GET_CONFIG_DATA_ERROR string = "Getting config data error...: "
+	MYSQL_OPEN_ERROR            string = "Error opening database...: "
+	MYSQL_INSERT_ERROR          string = "Error inserting record...: "
+	MYSQL_GET_ERROR             string = "Error getting record...: "
+	MYSQL_UPDATE_ERROR          string = "Error updating record...: "
+	MYSQL_DELETE_ERROR          string = "Error deleting record...: "
+	MYSQL_RESULTS_ERROR         string = "Error getting results...: "
+	MYSQL_ROWS_AFFECTED_ERROR   string = "Error getting rows affected...: "
+	MYSQL_PING_ERROR            string = "Error pinging database server...: "
+)
+
 var mySQLModel *dbModel
 
 type dbModel struct {
@@ -17,14 +34,14 @@ type dbModel struct {
 
 // Open database
 func (dbm *dbModel) Open(sqlDriverName string) (*sql.DB, error) {
-	log.Println("Opening MySQL database")
+	log.Print(MYSQL_DB_NAME_MSG + "Opening MySQL database")
 
 	// Open database connection
 	dataSourceName := dbm.cfgData.MySQL.Connection + "maindb"
 	db, openErr := sql.Open(sqlDriverName, dataSourceName)
 
 	if openErr != nil {
-		log.Println("Error opening MySQL database...")
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_OPEN_ERROR, openErr)
 		return nil, openErr
 	}
 
@@ -33,15 +50,16 @@ func (dbm *dbModel) Open(sqlDriverName string) (*sql.DB, error) {
 
 // Ping database server by verifying the database connection is active
 func (dbm *dbModel) Ping() error {
-	db, openErr := dbm.Open(dbm.cfgData.MySQL.DriverName)
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_OPEN_ERROR, openErr)
 		return openErr
 	}
 	defer db.Close()
 
 	pingErr := db.Ping()
 	if openErr != nil {
-		log.Print("Error pinging database server")
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_PING_ERROR, pingErr)
 		return pingErr
 	}
 
@@ -49,10 +67,11 @@ func (dbm *dbModel) Ping() error {
 }
 
 // Insert a single record into table
-func (dbm *dbModel) InsertQuestion(qRequest data.QuestionRequest) (int64, error) {
-	db, openErr := dbm.Open(dbm.cfgData.MySQL.DriverName)
+func (dbm *dbModel) Insert(qRequest data.QuestionRequest) (int64, error) {
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
-		return data.RESULTS_DEFAULT, openErr
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_OPEN_ERROR, openErr)
+		return data.OPEN_ERROR_CODE, openErr
 	}
 	defer db.Close()
 
@@ -60,21 +79,24 @@ func (dbm *dbModel) InsertQuestion(qRequest data.QuestionRequest) (int64, error)
 	queryStr := "INSERT INTO trivia VALUES (?, ?, ?, ?)"
 	sqlDB, execErr := db.Exec(queryStr, qRequest.QuestionID, qRequest.Question, qRequest.Category, qRequest.Answer)
 	if execErr != nil {
-		log.Print("Error insert record into datbase")
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_INSERT_ERROR, execErr)
+		return data.INSERT_ERROR_CODE, execErr
 	}
 
 	rowsAffected, rowsAffectedErr := sqlDB.RowsAffected()
 	if rowsAffectedErr != nil {
-		log.Print("Error getting rows affected: ", rowsAffectedErr.Error())
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_ROWS_AFFECTED_ERROR, rowsAffectedErr.Error())
+		return data.ROWS_AFFECTED_ERROR_CODE, rowsAffectedErr
 	}
 
 	return rowsAffected, nil
 }
 
 // Get a single record from table
-func (dbm *dbModel) GetQuestion(questionID string) (data.QuestionTable, error) {
-	db, openErr := dbm.Open(dbm.cfgData.MySQL.DriverName)
+func (dbm *dbModel) Get(questionID string) (data.QuestionTable, error) {
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_OPEN_ERROR, openErr)
 		return data.QuestionTable{}, openErr
 	}
 	defer db.Close()
@@ -86,7 +108,7 @@ func (dbm *dbModel) GetQuestion(questionID string) (data.QuestionTable, error) {
 	queryErr := db.QueryRow(queryStr, questionID).Scan(&qTable.Question, &qTable.Category, &qTable.Answer)
 	if queryErr != nil {
 		if queryErr != sql.ErrNoRows {
-			log.Print("Error getting results from MySQL database...: ", queryErr.Error())
+			log.Print(MYSQL_DB_NAME_MSG+MYSQL_RESULTS_ERROR, queryErr.Error())
 		}
 
 		return data.QuestionTable{}, queryErr
@@ -96,10 +118,11 @@ func (dbm *dbModel) GetQuestion(questionID string) (data.QuestionTable, error) {
 }
 
 // Update a single record in table
-func (dbm *dbModel) UpdateQuestion(qRequest data.QuestionRequest) (int64, error) {
-	db, openErr := dbm.Open(dbm.cfgData.MySQL.DriverName)
+func (dbm *dbModel) Update(qRequest data.QuestionRequest) (int64, error) {
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
-		return data.RESULTS_DEFAULT, openErr
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_OPEN_ERROR, openErr)
+		return data.OPEN_ERROR_CODE, openErr
 	}
 	defer db.Close()
 
@@ -107,24 +130,25 @@ func (dbm *dbModel) UpdateQuestion(qRequest data.QuestionRequest) (int64, error)
 	queryStr := "UPDATE trivia SET question = ?, category = ?, answer = ? WHERE question_id = ?"
 	sqlDB, execErr := db.Exec(queryStr, qRequest.Question, qRequest.Category, qRequest.Answer, qRequest.QuestionID)
 	if execErr != nil {
-		log.Print("Error updating database record")
-		return data.RESULTS_DEFAULT, execErr
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_UPDATE_ERROR, execErr)
+		return data.UPDATE_ERROR_CODE, execErr
 	}
 
 	rowsAffected, rowsAffectedErr := sqlDB.RowsAffected()
 	if rowsAffectedErr != nil {
-		log.Print("Error getting rows affected: ", rowsAffectedErr.Error())
-		return data.RESULTS_DEFAULT, rowsAffectedErr
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_ROWS_AFFECTED_ERROR, rowsAffectedErr.Error())
+		return data.ROWS_AFFECTED_ERROR_CODE, rowsAffectedErr
 	}
 
 	return rowsAffected, nil
 }
 
 // Delete a single record from table
-func (dbm *dbModel) DeleteQuestion(questionID string) (int64, error) {
-	db, openErr := dbm.Open(dbm.cfgData.MySQL.DriverName)
+func (dbm *dbModel) Delete(questionID string) (int64, error) {
+	db, openErr := dbm.Open(dbm.cfgData.ActiveDriver)
 	if openErr != nil {
-		return data.RESULTS_DEFAULT, openErr
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_OPEN_ERROR, openErr)
+		return data.OPEN_ERROR_CODE, openErr
 	}
 	defer db.Close()
 
@@ -132,14 +156,14 @@ func (dbm *dbModel) DeleteQuestion(questionID string) (int64, error) {
 	queryStr := "DELETE FROM trivia WHERE question_id = ?"
 	sqlDB, execErr := db.Exec(queryStr, questionID)
 	if execErr != nil {
-		log.Print("Error deleting record from database")
-		return data.RESULTS_DEFAULT, execErr
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_DELETE_ERROR, execErr)
+		return data.DELETE_ERROR_CODE, execErr
 	}
 
 	rowsAffected, rowsAffectedErr := sqlDB.RowsAffected()
 	if rowsAffectedErr != nil {
-		log.Print("Error getting rows affected: ", rowsAffectedErr.Error())
-		return data.RESULTS_DEFAULT, rowsAffectedErr
+		log.Print(MYSQL_DB_NAME_MSG+MYSQL_ROWS_AFFECTED_ERROR, rowsAffectedErr.Error())
+		return data.ROWS_AFFECTED_ERROR_CODE, rowsAffectedErr
 	}
 
 	return rowsAffected, nil
@@ -150,12 +174,20 @@ func GetMySQLModel() *dbModel {
 		log.Print("Creating MySQL database model")
 
 		mySQLModel = new(dbModel)
-		cfg, getErr := config.GetConfig()
+		cfg, getErr := config.Get()
 		if getErr != nil {
-			log.Fatal("Error getting config info: ", getErr)
+			log.Print(MYSQL_DB_NAME_MSG+MYSQL_GET_CONFIG_ERROR, getErr)
+			return nil
 		}
 
-		mySQLModel.cfgData = cfg.GetConfigData()
+		// Load config data
+		var getCfgDataErr error
+		mySQLModel.cfgData, getCfgDataErr = cfg.GetData()
+		if getCfgDataErr != nil {
+			log.Print(MYSQL_DB_NAME_MSG+MYSQL_GET_CONFIG_DATA_ERROR, getCfgDataErr)
+			return nil
+		}
+
 	}
 
 	return mySQLModel
