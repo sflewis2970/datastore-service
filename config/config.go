@@ -209,14 +209,17 @@ func (c *config) GetData(args ...string) (*ConfigData, error) {
 }
 
 // Exported package function
-func Get() (*config, error) {
+func Get() *config {
 	if cfg == nil {
 		log.Print("creating config object")
+
+		// Initialize config
 		cfg = new(config)
 
+		// Initialize config data
 		cfg.cfgData = new(ConfigData)
 	}
 
 	log.Print("returning config object")
-	return cfg, nil
+	return cfg
 }
