@@ -11,6 +11,25 @@ import (
 	"github.com/sflewis2970/datastore-service/models/data"
 )
 
+const (
+	GOCACHE_DB_NAME_MSG      string = "GO_CACHE: "
+	GOCACHE_CREATE_CACHE_MSG string = "Creating in-memory map to store data..."
+)
+
+const (
+	GOCACHE_GET_CONFIG_ERROR      string = "Getting config error...: "
+	GOCACHE_GET_CONFIG_DATA_ERROR string = "Getting config data error...: "
+	GOCACHE_OPEN_ERROR            string = "Open method not implemented..."
+	GOCACHE_INSERT_ERROR          string = "Insert error..."
+	GOCACHE_GET_ERROR             string = "Get error..."
+	GOCACHE_UPDATE_ERROR          string = "Update error..."
+	GOCACHE_DELETE_ERROR          string = "Delete error..."
+	GOCACHE_RESULTS_ERROR         string = "Results error...: "
+	GOCACHE_ROWS_AFFECTED_ERROR   string = "Rows affected error...: "
+	GOCACHE_PING_ERROR            string = "In-memory cache has not been created..."
+	GOCACHE_CONVERSION_ERROR      string = "Conversion error...: "
+)
+
 var goCacheModel *dbModel
 
 type dbModel struct {
@@ -19,20 +38,20 @@ type dbModel struct {
 }
 
 func (dbm *dbModel) Open(sqlDriverName string) (*sql.DB, error) {
-	return nil, errors.New("Go-cache does not implement Open method")
+	return nil, errors.New(GOCACHE_DB_NAME_MSG + GOCACHE_OPEN_ERROR)
 }
 
 // Ping database server, since this is local to the server make sure the object for storing data is created
 func (dbm *dbModel) Ping() error {
 	if dbm.memCache == nil {
-		return errors.New("Go-cache has not been created")
+		return errors.New(GOCACHE_DB_NAME_MSG + GOCACHE_PING_ERROR)
 	}
 
 	return nil
 }
 
 // Insert a single record into table
-func (dbm *dbModel) InsertQuestion(qRequest data.QuestionRequest) (int64, error) {
+func (dbm *dbModel) Insert(qRequest data.QuestionRequest) (int64, error) {
 	var qt data.QuestionTable
 	qt.Question = qRequest.Question
 	qt.Category = qRequest.Category
@@ -45,7 +64,7 @@ func (dbm *dbModel) InsertQuestion(qRequest data.QuestionRequest) (int64, error)
 }
 
 // Get a single record from table
-func (dbm *dbModel) GetQuestion(questionID string) (data.QuestionTable, error) {
+func (dbm *dbModel) Get(questionID string) (data.QuestionTable, error) {
 	log.Print("Getting record from the map, with ID: ", questionID)
 
 	item, itemFound := dbm.memCache.Get(questionID)
@@ -55,17 +74,17 @@ func (dbm *dbModel) GetQuestion(questionID string) (data.QuestionTable, error) {
 		ok := false
 		qt, ok = item.(data.QuestionTable)
 		if !ok {
-			log.Print("Error converting interface object: ", item)
+			log.Print(GOCACHE_DB_NAME_MSG+GOCACHE_CONVERSION_ERROR, item)
 		}
 	} else {
-		log.Print("No results returned")
+		log.Print(data.NO_RESULTS_RETURNED_MSG)
 	}
 
 	return qt, nil
 }
 
 // Update a single record in table
-func (dbm *dbModel) UpdateQuestion(qRequest data.QuestionRequest) (int64, error) {
+func (dbm *dbModel) Update(qRequest data.QuestionRequest) (int64, error) {
 	log.Println("Updating record in the map")
 
 	var qt data.QuestionTable
@@ -79,7 +98,7 @@ func (dbm *dbModel) UpdateQuestion(qRequest data.QuestionRequest) (int64, error)
 }
 
 // Delete a single record from table
-func (dbm *dbModel) DeleteQuestion(questionID string) (int64, error) {
+func (dbm *dbModel) Delete(questionID string) (int64, error) {
 	log.Print("Deleting record with ID: ", questionID)
 
 	// Delete the record from map
@@ -91,14 +110,21 @@ func (dbm *dbModel) DeleteQuestion(questionID string) (int64, error) {
 func GetGoCacheModel() *dbModel {
 	if goCacheModel == nil {
 		goCacheModel = new(dbModel)
-		cfg, getErr := config.GetConfig()
-		if getErr != nil {
-			log.Fatal("Error getting config info: ", getErr)
+		cfg, getCfgErr := config.Get()
+		if getCfgErr != nil {
+			log.Print(GOCACHE_DB_NAME_MSG+GOCACHE_GET_CONFIG_ERROR, getCfgErr)
+			return nil
 		}
 
-		goCacheModel.cfgData = cfg.GetConfigData()
+		// Load config data
+		var getCfgDataErr error
+		goCacheModel.cfgData, getCfgDataErr = cfg.GetData()
+		if getCfgDataErr != nil {
+			log.Print(GOCACHE_DB_NAME_MSG+GOCACHE_GET_CONFIG_DATA_ERROR, getCfgDataErr)
+			return nil
+		}
 
-		log.Print("Creating in-memory map to store data")
+		log.Print(GOCACHE_DB_NAME_MSG + GOCACHE_CREATE_CACHE_MSG)
 		goCacheModel.memCache = cache.New(time.Duration(goCacheModel.cfgData.GoCache.DefaultExpiration)*time.Minute, time.Duration(goCacheModel.cfgData.GoCache.CleanupInterval)*time.Minute)
 	}
 
