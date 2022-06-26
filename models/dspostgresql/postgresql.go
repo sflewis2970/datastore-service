@@ -171,16 +171,12 @@ func GetPostGreSQLModel() *dbModel {
 	if postgreSQLModel == nil {
 		log.Print("Creating PostgreSQL database model")
 
+		// Initialize PostgreSQL database model
 		postgreSQLModel = new(dbModel)
-		cfg, getCfgErr := config.Get()
-		if getCfgErr != nil {
-			log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_GET_CONFIG_ERROR, getCfgErr)
-			return nil
-		}
 
 		// Load config data
 		var getCfgDataErr error
-		postgreSQLModel.cfgData, getCfgDataErr = cfg.GetData()
+		postgreSQLModel.cfgData, getCfgDataErr = config.Get().GetData()
 		if getCfgDataErr != nil {
 			log.Print(POSTGRESQL_DB_NAME_MSG+POSTGRESQL_GET_CONFIG_DATA_ERROR, getCfgDataErr)
 			return nil
