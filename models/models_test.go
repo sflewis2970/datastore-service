@@ -163,13 +163,8 @@ func TestNewSDBModel(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
 			setConfigEnv(tc.driverName)
-			cfg, getCfgErr := config.Get()
-			if getCfgErr != nil {
-				t.Errorf("Error getting config...")
-				return
-			}
 
-			_, getCfgDataErr := cfg.GetData(config.UPDATE_CONFIG_DATA)
+			_, getCfgDataErr := config.Get().GetData(config.UPDATE_CONFIG_DATA)
 			if getCfgDataErr != nil {
 				t.Errorf("Error getting config data...")
 				return
