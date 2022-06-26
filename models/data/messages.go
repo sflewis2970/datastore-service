@@ -2,6 +2,18 @@ package data
 
 import "database/sql"
 
+const NO_RESULTS_RETURNED_MSG string = "No results returned..."
+
+const (
+	RESULTS_DEFAULT          int64 = 0
+	OPEN_ERROR_CODE          int64 = -1
+	INSERT_ERROR_CODE        int64 = -2
+	GET_ERROR_CODE           int64 = -3
+	UPDATE_ERROR_CODE        int64 = -4
+	DELETE_ERROR_CODE        int64 = -5
+	ROWS_AFFECTED_ERROR_CODE int64 = -99
+)
+
 type StatusCode int
 
 // Status Response Message
@@ -58,13 +70,11 @@ type AnswerResponse struct {
 	Error     string `json:"error,omitempty"`
 }
 
-const RESULTS_DEFAULT int64 = 0
-
 type IDBModel interface {
 	Open(driverName string) (*sql.DB, error)
 	Ping() error
-	InsertQuestion(question QuestionRequest) (int64, error)
-	GetQuestion(questionID string) (QuestionTable, error)
-	UpdateQuestion(question QuestionRequest) (int64, error)
-	DeleteQuestion(questionID string) (int64, error)
+	Insert(question QuestionRequest) (int64, error)
+	Get(questionID string) (QuestionTable, error)
+	Update(question QuestionRequest) (int64, error)
+	Delete(questionID string) (int64, error)
 }

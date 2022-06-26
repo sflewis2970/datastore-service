@@ -2,15 +2,11 @@ package models
 
 import (
 	"log"
+	"os"
 	"testing"
 
+	"github.com/sflewis2970/datastore-service/config"
 	"github.com/sflewis2970/datastore-service/models/data"
-)
-
-const (
-	GOCACHE_DRIVER    string = "go-cache"
-	MYSQL_DRIVER      string = "mysql"
-	POSTGRESQL_DRIVER string = "postgres"
 )
 
 func checkDBDriver(t *testing.T, driverName string, gotDBModel data.IDBModel) {
@@ -24,14 +20,15 @@ func checkDBDriver(t *testing.T, driverName string, gotDBModel data.IDBModel) {
 	qRequest.QuestionID = "aaaaqqqq"
 	qRequest.Question = "What is 4 / 2?"
 	qRequest.Answer = "2"
-	_, insertErr := gotDBModel.InsertQuestion(qRequest)
+
+	_, insertErr := gotDBModel.Insert(qRequest)
 	if insertErr != nil {
 		t.Error("Error inserting new record...")
 		return
 	}
 
 	// Test get question
-	qt, getErr := gotDBModel.GetQuestion(qRequest.QuestionID)
+	qt, getErr := gotDBModel.Get(qRequest.QuestionID)
 	if getErr != nil {
 		t.Error("Error retrieving record...")
 		return
@@ -49,24 +46,24 @@ func checkDBDriver(t *testing.T, driverName string, gotDBModel data.IDBModel) {
 
 	// Test update question
 	qRequest.Category = "general"
-	updateRowsAffected, updateErr := gotDBModel.UpdateQuestion(qRequest)
+	updateRowsAffected, updateErr := gotDBModel.Update(qRequest)
 	if updateErr != nil {
 		t.Error("Error updating existing record...")
 		return
 	}
 
-	if driverName != GOCACHE_DRIVER && updateRowsAffected == 0 {
+	if driverName != config.GOCACHE_DRIVER && updateRowsAffected == 0 {
 		t.Error("No rows affected when attempting to delete existing record...")
 		return
 	}
 
 	// Test delete question
-	deletedRowsAffected, deleteErr := gotDBModel.DeleteQuestion(qRequest.QuestionID)
+	deletedRowsAffected, deleteErr := gotDBModel.Delete(qRequest.QuestionID)
 	if deleteErr != nil {
 		t.Error("Error deleting record...")
 	}
 
-	if driverName != GOCACHE_DRIVER && deletedRowsAffected == 0 {
+	if driverName != config.GOCACHE_DRIVER && deletedRowsAffected == 0 {
 		t.Error("No rows affected when attempting to delete existing record...")
 		return
 	}
@@ -79,6 +76,73 @@ func checkInvalidDriver(t *testing.T, driverName string, gotDBModel data.IDBMode
 	}
 }
 
+// The envionment variables will be set on the server
+// For testing, set the variables manually
+func setConfigEnv(driverName string) error {
+	// Set hostname environment variable
+	setErr := os.Setenv(config.HOSTNAME, "")
+	if setErr != nil {
+		log.Print("Error setting config vars...")
+		return setErr
+	}
+
+	// Set hostport environment variable
+	setErr = os.Setenv(config.HOSTPORT, ":9090")
+	if setErr != nil {
+		log.Print("Error setting config vars...")
+		return setErr
+	}
+
+	// Set activedriver environment variable
+	setErr = os.Setenv(config.ACTIVEDRIVER, driverName)
+	if setErr != nil {
+		log.Print("Error setting config vars...")
+		return setErr
+	}
+
+	// Set Go-cache environment variable
+	switch os.Getenv(config.ACTIVEDRIVER) {
+	case "go-cache":
+		setErr = os.Setenv(config.DEFAULT_EXPIRATION, "1")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+
+		setErr = os.Setenv(config.CLEANUP_INTERVAL, "30")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+	case "mysql":
+		setErr = os.Setenv(config.MYSQL_CONNECTION, "root:devStation@tcp(127.0.0.1:3306)/")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+	case "postgres":
+		setErr = os.Setenv(config.POSTGRES_HOST, "127.0.0.1")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+
+		setErr = os.Setenv(config.POSTGRES_PORT, "5432")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+
+		setErr = os.Setenv(config.POSTGRES_USER, "postgres")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+	}
+
+	return nil
+}
+
 func TestNewSDBModel(t *testing.T) {
 	// Initialize logging
 	log.SetFlags(log.Ldate | log.Lshortfile)
@@ -89,23 +153,36 @@ func TestNewSDBModel(t *testing.T) {
 		testActive bool
 		driverName string
 	}{
-		{testName: "GoCache driver test", testActive: true, driverName: GOCACHE_DRIVER},
-		{testName: "MySQL driver test", testActive: false, driverName: MYSQL_DRIVER},
-		{testName: "PostgreSQL driver test", testActive: false, driverName: POSTGRESQL_DRIVER},
+		{testName: "GoCache driver test", testActive: true, driverName: config.GOCACHE_DRIVER},
+		{testName: "MySQL driver test", testActive: false, driverName: config.MYSQL_DRIVER},
+		{testName: "PostgreSQL driver test", testActive: false, driverName: config.POSTGRESQL_DRIVER},
 		{testName: "No driver test", testActive: true, driverName: ""},
 		{testName: "Bad driver test", testActive: true, driverName: "baddrivername"},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
+			setConfigEnv(tc.driverName)
+			cfg, getCfgErr := config.Get()
+			if getCfgErr != nil {
+				t.Errorf("Error getting config...")
+				return
+			}
+
+			_, getCfgDataErr := cfg.GetData(config.UPDATE_CONFIG_DATA)
+			if getCfgDataErr != nil {
+				t.Errorf("Error getting config data...")
+				return
+			}
+
 			gotDBModel := NewDBModel(tc.driverName)
 
 			switch tc.driverName {
-			case "go-cache":
+			case config.GOCACHE_DRIVER:
 				fallthrough
-			case "mysql":
+			case config.MYSQL_DRIVER:
 				fallthrough
-			case "postgres":
+			case config.POSTGRESQL_DRIVER:
 				if tc.testActive {
 					checkDBDriver(t, tc.driverName, gotDBModel)
 				}

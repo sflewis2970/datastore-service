@@ -3,17 +3,85 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/sflewis2970/datastore-service/config"
 	"github.com/sflewis2970/datastore-service/models"
 	"github.com/sflewis2970/datastore-service/models/data"
 )
 
-var ErrQuestionNotFound = errors.New("Question not found")
+const NoResultsReturnedFoundMsg string = "No results returned"
+
+// The envionment variables will be set on the server
+// For testing, set the variables manually
+func setConfigEnv(activeDriver string) error {
+	// Set hostname environment variable
+	setErr := os.Setenv(config.HOSTNAME, "")
+	if setErr != nil {
+		log.Print("Error setting config vars...")
+		return setErr
+	}
+
+	// Set hostport environment variable
+	setErr = os.Setenv(config.HOSTPORT, ":9090")
+	if setErr != nil {
+		log.Print("Error setting config vars...")
+		return setErr
+	}
+
+	// Set activedriver environment variable
+	setErr = os.Setenv(config.ACTIVEDRIVER, activeDriver)
+	if setErr != nil {
+		log.Print("Error setting config vars...")
+		return setErr
+	}
+
+	// Set Go-cache environment variable
+	switch os.Getenv(config.ACTIVEDRIVER) {
+	case "go-cache":
+		setErr = os.Setenv(config.DEFAULT_EXPIRATION, "1")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+
+		setErr = os.Setenv(config.CLEANUP_INTERVAL, "30")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+	case "mysql":
+		setErr = os.Setenv(config.MYSQL_CONNECTION, "root:devStation@tcp(127.0.0.1:3306)/")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+	case "postgres":
+		setErr = os.Setenv(config.POSTGRES_HOST, "127.0.0.1")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+
+		setErr = os.Setenv(config.POSTGRES_PORT, "5432")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+
+		setErr = os.Setenv(config.POSTGRES_USER, "postgres")
+		if setErr != nil {
+			log.Print("Error setting config vars...")
+			return setErr
+		}
+	}
+
+	return nil
+}
 
 func AddQuestionTest(t *testing.T, jsonData []byte) []byte {
 	// Create new request
@@ -24,7 +92,7 @@ func AddQuestionTest(t *testing.T, jsonData []byte) []byte {
 
 	// Setup recoder
 	rRecorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(InsertQuestion)
+	handler := http.HandlerFunc(Insert)
 	handler.ServeHTTP(rRecorder, request)
 
 	// Check response code
@@ -63,8 +131,11 @@ func TestStatus(t *testing.T) {
 	// Initialize logging
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
+	// Set config environment variables
+	setConfigEnv("go-cache")
+
 	// Initialize controllers object
-	InitializeController()
+	Initialize(config.UPDATE_CONFIG_DATA)
 
 	// Create new request
 	request, reqErr := http.NewRequest("GET", "/api/v1/ds/status", nil)
@@ -103,8 +174,11 @@ func TestCheckAnswerWithCorrectAnswer(t *testing.T) {
 	// Initialize logging
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
+	// Set config environment variables
+	setConfigEnv("go-cache")
+
 	// Initialize controllers object
-	InitializeController()
+	Initialize(config.UPDATE_CONFIG_DATA)
 
 	// Simulate a client sending a QuestionRequest to the datastore server
 	// Question Request
@@ -170,8 +244,11 @@ func TestCheckAnswerWithIncorrectAnswer(t *testing.T) {
 	// Initialize logging
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
+	// Set config environment variables
+	setConfigEnv("go-cache")
+
 	// Initialize controllers object
-	InitializeController()
+	Initialize(config.UPDATE_CONFIG_DATA)
 
 	// Simulate a client sending a QuestionRequest to the datastore server
 	// Build Question Request
@@ -240,8 +317,11 @@ func TestCheckAnswerWithoutAddQuestion(t *testing.T) {
 	// Initialize logging
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
+	// Set config environment variables
+	setConfigEnv("go-cache")
+
 	// Initialize controllers object
-	InitializeController()
+	Initialize(config.UPDATE_CONFIG_DATA)
 
 	// Simulate a client sending a AnswerRequest to the datastore server
 	// Build AnswerRequest
@@ -266,8 +346,7 @@ func TestCheckAnswerWithoutAddQuestion(t *testing.T) {
 	}
 
 	// Check Error field
-	log.Print("Answer Response error: ", aResponse.Error)
-	if aResponse.Error == ErrQuestionNotFound.Error() {
-		t.Errorf("An unexpectedly error occurred...")
+	if aResponse.Message != NoResultsReturnedFoundMsg {
+		t.Errorf("An unexpectedly message returned...")
 	}
 }
