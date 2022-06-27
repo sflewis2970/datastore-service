@@ -35,10 +35,6 @@ const (
 	POSTGRES_HOST      string = "postgres_host"
 	POSTGRES_PORT      string = "postgres_port"
 	POSTGRES_USER      string = "postgres_user"
-
-	// Response Messages
-	CONGRATS string = "congrats"
-	TRYAGAIN string = "tryagain"
 )
 
 type GoCache struct {
@@ -56,11 +52,6 @@ type PostGreSQL struct {
 	User string `json:"user"`
 }
 
-type Message struct {
-	CongratsMsg string `json:"congrats"`
-	TryAgainMsg string `json:"tryagain"`
-}
-
 type ConfigData struct {
 	HostName     string `json:"hostname"`
 	HostPort     string `json:"hostport"`
@@ -68,7 +59,6 @@ type ConfigData struct {
 	GoCache      GoCache
 	MySQL        MySQL
 	PostGreSQL   PostGreSQL
-	Messages     Message
 }
 
 type config struct {
@@ -180,10 +170,6 @@ func (c *config) getConfigEnv() error {
 		}
 		c.cfgData.PostGreSQL.User = os.Getenv(POSTGRES_USER)
 	}
-
-	// Set response messages
-	c.cfgData.Messages.CongratsMsg = os.Getenv(CONGRATS)
-	c.cfgData.Messages.TryAgainMsg = os.Getenv(TRYAGAIN)
 
 	return nil
 }
