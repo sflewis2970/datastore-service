@@ -3,6 +3,7 @@ package controllers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -11,6 +12,13 @@ import (
 	"github.com/sflewis2970/datastore-service/models"
 	"github.com/sflewis2970/datastore-service/models/data"
 )
+
+func Home(rw http.ResponseWriter, r *http.Request) {
+	// Display a log message
+	log.Print("Datastore home...")
+
+	fmt.Fprint(rw, "Welcome to the Datastore service\n")
+}
 
 func Status(rw http.ResponseWriter, r *http.Request) {
 	// Display a log message
