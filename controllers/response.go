@@ -51,7 +51,7 @@ func Insert(rw http.ResponseWriter, r *http.Request) {
 	defer ctrlr.dbMutex.Unlock()
 
 	// Display a log message
-	log.Print("client requested insert action...")
+	log.Print("Insert action requested...")
 
 	// Question Request
 	var qRequest data.QuestionRequest
@@ -88,7 +88,7 @@ func Insert(rw http.ResponseWriter, r *http.Request) {
 		log.Print("sending response to client...")
 
 		// Build QuestionResponse message
-		qResponse.Message = "Added question to the datastore"
+		qResponse.Message = "Record added to the datastore"
 	}
 
 	// Write JSON to stream
@@ -146,7 +146,7 @@ func Get(rw http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		aResponse.Message = "No results returned"
+		aResponse.Message = data.NO_RESULTS_RETURNED_MSG
 	}
 
 	// Write JSON to stream
