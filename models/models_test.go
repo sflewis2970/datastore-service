@@ -53,7 +53,7 @@ func checkDBDriver(t *testing.T, driverName string, gotDBModel data.IDBModel) {
 	}
 
 	if driverName != config.GOCACHE_DRIVER && updateRowsAffected == 0 {
-		t.Error("No rows affected when attempting to delete existing record...")
+		t.Error("No rows affected when attempting to update existing record...")
 		return
 	}
 

@@ -17,8 +17,8 @@ func (rs *RoutingServer) setupRoutes() {
 
 	// Setup routes
 	rs.Router.HandleFunc("/api/v1/ds/status", controllers.Status).Methods("GET")
-	rs.Router.HandleFunc("/api/v1/ds/addquestion", controllers.Insert).Methods("POST")
-	rs.Router.HandleFunc("/api/v1/ds/checkanswer", controllers.CheckAnswer).Methods("POST")
+	rs.Router.HandleFunc("/api/v1/ds/insert", controllers.Insert).Methods("POST")
+	rs.Router.HandleFunc("/api/v1/ds/get", controllers.Get).Methods("POST")
 }
 
 func CreateRoutingServer() *RoutingServer {

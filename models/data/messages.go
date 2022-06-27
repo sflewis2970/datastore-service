@@ -55,16 +55,13 @@ type QuestionTable struct {
 // Answer Request-Response Messages
 type AnswerRequest struct {
 	QuestionID string `json:"questionid"`
-	Response   string `json:"response"`
 }
 
 type AnswerResponse struct {
 	Question  string `json:"question"`
 	Category  string `json:"category"`
 	Answer    string `json:"answer"`
-	Response  string `json:"response"`
 	Timestamp string `json:"timestamp"`
-	Correct   bool   `json:"correct"`
 	Message   string `json:"message,omitempty"`
 	Warning   string `json:"warning,omitempty"`
 	Error     string `json:"error,omitempty"`

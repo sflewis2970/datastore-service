@@ -32,10 +32,6 @@ func setCfgEnv() {
 		os.Setenv(config.POSTGRES_PORT, "5432")
 		os.Setenv(config.POSTGRES_USER, "postgres")
 	}
-
-	// Response messages
-	os.Setenv(config.CONGRATS, "Congrats! That is correct")
-	os.Setenv(config.TRYAGAIN, "Nice try! Better luck on the next question")
 }
 
 func main() {

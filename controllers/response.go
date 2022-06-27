@@ -51,7 +51,7 @@ func Insert(rw http.ResponseWriter, r *http.Request) {
 	defer ctrlr.dbMutex.Unlock()
 
 	// Display a log message
-	log.Print("client requested insert action...")
+	log.Print("Insert action requested...")
 
 	// Question Request
 	var qRequest data.QuestionRequest
@@ -88,52 +88,69 @@ func Insert(rw http.ResponseWriter, r *http.Request) {
 		log.Print("sending response to client...")
 
 		// Build QuestionResponse message
-		qResponse.Message = "Added question to the datastore"
+		qResponse.Message = "Record added to the datastore"
 	}
 
 	// Write JSON to stream
 	json.NewEncoder(rw).Encode(qResponse)
 }
 
+// Get receives a request and
 func Get(rw http.ResponseWriter, r *http.Request) {
 	ctrlr.dbMutex.Lock()
 	defer ctrlr.dbMutex.Unlock()
 
-	// Get question ID from query parameter
-	questionID := r.URL.Query().Get("questionid")
+	// Answer Request
+	var aRequest data.AnswerRequest
 
 	// Display a log message
-	log.Print("client requested to getquestion...")
+	log.Print("data received from client...")
 
-	// Connect to database
+	// Decode request into JSON format
+	json.NewDecoder(r.Body).Decode(&aRequest)
+
+	// use dbModel to execute SQL command
 	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
+	qt, getErr := dbModel.Get(aRequest.QuestionID)
 
-	// Get item from database
-	qt, getErr := dbModel.Get(questionID)
+	// Build AnswerResponse message
+	var aResponse data.AnswerResponse
+	aResponse.Timestamp = common.GetFormattedTime(time.Now(), "Mon Jan 2 15:04:05 2006")
+	aResponse.Question = qt.Question
+	aResponse.Category = qt.Category
+	aResponse.Answer = qt.Answer
 
-	var qResponse data.QuestionResponse
-	if getErr != nil {
-		qResponse.Error = getErr.Error()
+	// Since sql.QueryRow wraps no results inside error messages,
+	// when an error is returned a check needs to be made
+	// if ErrNoRows is returned.
+	if getErr != nil && getErr != sql.ErrNoRows {
+		aResponse.Error = getErr.Error()
 
 		// Update status
 		rw.WriteHeader(http.StatusInternalServerError)
-
-		// Display a log message
-		log.Print("Error getting question...")
-
-	} else {
-		// Display a log message
-		log.Print("sending response to client...")
-
+	} else if len(qt.Question) > 0 {
+		log.Print("Question retrieved processing message...")
 		// Build Response Message
-		qResponse.QuestionID = questionID
-		qResponse.Question = qt.Question
-		qResponse.Category = qt.Category
-		qResponse.Answer = qt.Answer
+
+		// delete record from DB once the client answers the question
+		// Whether the answer is correct or not
+		rowsAffected, delErr := dbModel.Delete(aRequest.QuestionID)
+		if delErr != nil {
+			aResponse.Error = delErr.Error()
+
+			// Update status
+			rw.WriteHeader(http.StatusInternalServerError)
+		} else {
+			if rowsAffected > 0 {
+				log.Print("rows affected: ", rowsAffected)
+			}
+		}
+	} else {
+		aResponse.Message = data.NO_RESULTS_RETURNED_MSG
 	}
 
 	// Write JSON to stream
-	json.NewEncoder(rw).Encode(qResponse)
+	json.NewEncoder(rw).Encode(aResponse)
 }
 
 func Update(rw http.ResponseWriter, r *http.Request) {
@@ -206,69 +223,4 @@ func Delete(rw http.ResponseWriter, r *http.Request) {
 
 	// Write JSON to stream
 	json.NewEncoder(rw).Encode(qResponse)
-}
-
-func CheckAnswer(rw http.ResponseWriter, r *http.Request) {
-	ctrlr.dbMutex.Lock()
-	defer ctrlr.dbMutex.Unlock()
-
-	// Answer Request
-	var aRequest data.AnswerRequest
-
-	// Display a log message
-	log.Print("data received from client...")
-
-	// Decode request into JSON format
-	json.NewDecoder(r.Body).Decode(&aRequest)
-
-	// use dbModel to execute SQL command
-	dbModel := models.NewDBModel(ctrlr.cfgData.ActiveDriver)
-	qt, getErr := dbModel.Get(aRequest.QuestionID)
-
-	// Build AnswerResponse message
-	var aResponse data.AnswerResponse
-	aResponse.Timestamp = common.GetFormattedTime(time.Now(), "Mon Jan 2 15:04:05 2006")
-	aResponse.Question = qt.Question
-	aResponse.Category = qt.Category
-	aResponse.Answer = qt.Answer
-	aResponse.Response = aRequest.Response
-
-	// Since sql.QueryRow wraps no results inside error messages,
-	// when an error is returned a check needs to be made
-	// if ErrNoRows is returned.
-	if getErr != nil && getErr != sql.ErrNoRows {
-		aResponse.Error = getErr.Error()
-
-		// Update status
-		rw.WriteHeader(http.StatusInternalServerError)
-	} else if len(qt.Question) > 0 {
-		log.Print("Question retrieved processing message...")
-		// Build Response Message
-		if qt.Answer == aRequest.Response {
-			aResponse.Correct = true
-			aResponse.Message = ctrlr.cfgData.Messages.CongratsMsg
-		} else {
-			aResponse.Correct = false
-			aResponse.Message = ctrlr.cfgData.Messages.TryAgainMsg
-		}
-
-		// delete record from DB once the client answers the question
-		// Whether the answer is correct or not
-		rowsAffected, delErr := dbModel.Delete(aRequest.QuestionID)
-		if delErr != nil {
-			aResponse.Error = delErr.Error()
-
-			// Update status
-			rw.WriteHeader(http.StatusInternalServerError)
-		} else {
-			if rowsAffected > 0 {
-				log.Print("rows affected: ", rowsAffected)
-			}
-		}
-	} else {
-		aResponse.Message = "No results returned"
-	}
-
-	// Write JSON to stream
-	json.NewEncoder(rw).Encode(aResponse)
 }
