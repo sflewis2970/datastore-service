@@ -83,7 +83,7 @@ func setConfigEnv(activeDriver string) error {
 	return nil
 }
 
-func AddQuestionTest(t *testing.T, jsonData []byte) []byte {
+func InsertTest(t *testing.T, jsonData []byte) []byte {
 	// Create new request
 	request, reqErr := http.NewRequest("GET", "/api/v1/ds/addquestion", bytes.NewBuffer(jsonData))
 	if reqErr != nil {
@@ -105,7 +105,7 @@ func AddQuestionTest(t *testing.T, jsonData []byte) []byte {
 	return rRecorder.Body.Bytes()
 }
 
-func CheckAnswerTest(t *testing.T, jsonData []byte) []byte {
+func GetTest(t *testing.T, jsonData []byte) []byte {
 	// Create new request
 	request, reqErr := http.NewRequest("GET", "/api/v1/ds/checkanswer", bytes.NewBuffer(jsonData))
 	if reqErr != nil {
@@ -114,7 +114,7 @@ func CheckAnswerTest(t *testing.T, jsonData []byte) []byte {
 
 	// Setup recoder
 	rRecorder := httptest.NewRecorder()
-	handler := http.HandlerFunc(CheckAnswer)
+	handler := http.HandlerFunc(Get)
 	handler.ServeHTTP(rRecorder, request)
 
 	// Check response code
@@ -170,7 +170,7 @@ func TestStatus(t *testing.T) {
 	}
 }
 
-func TestCheckAnswerWithCorrectAnswer(t *testing.T) {
+func TestInsert(t *testing.T) {
 	// Initialize logging
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
@@ -185,7 +185,7 @@ func TestCheckAnswerWithCorrectAnswer(t *testing.T) {
 	var qRequest data.QuestionRequest
 
 	// Build Question Request
-	qRequest.QuestionID = "abcdefgh"
+	qRequest.QuestionID = "aaaabbbb"
 	qRequest.Question = "According to Greek mythology, who was the first woman on earth?"
 	qRequest.Category = "general"
 	qRequest.Answer = "Pandora"
@@ -197,7 +197,7 @@ func TestCheckAnswerWithCorrectAnswer(t *testing.T) {
 	}
 
 	// Send AddQuestion request to datastore
-	bodyBytes := AddQuestionTest(t, jsonData)
+	bodyBytes := InsertTest(t, jsonData)
 
 	// Unmarshal data to QuestionResponse
 	var qResponse data.QuestionResponse
@@ -210,37 +210,9 @@ func TestCheckAnswerWithCorrectAnswer(t *testing.T) {
 	if len(qResponse.Error) != 0 {
 		t.Errorf("An error occurred inserting record...")
 	}
-
-	// Simulate a client sending an AnswerRequest to the datastore server
-	// Answer Request
-	var aRequest data.AnswerRequest
-
-	// Build Question Request
-	aRequest.QuestionID = qRequest.QuestionID
-	aRequest.Response = qRequest.Answer
-	jsonData, marshalErr = json.Marshal(aRequest)
-
-	if marshalErr != nil {
-		t.Errorf("New request error: %s", marshalErr.Error())
-	}
-
-	// Send AddQuestion request to datastore
-	bodyBytes = CheckAnswerTest(t, jsonData)
-
-	// Unmarshal data to AnswerResponse
-	var aResponse data.AnswerResponse
-	unmarshalErr = json.Unmarshal(bodyBytes, &aResponse)
-	if unmarshalErr != nil {
-		t.Errorf(unmarshalErr.Error())
-	}
-
-	// Check Question field
-	if qRequest.Question != aResponse.Question {
-		t.Errorf("The question fields do NOT match")
-	}
 }
 
-func TestCheckAnswerWithIncorrectAnswer(t *testing.T) {
+func TestGetBeforeInsert(t *testing.T) {
 	// Initialize logging
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
@@ -267,7 +239,7 @@ func TestCheckAnswerWithIncorrectAnswer(t *testing.T) {
 	}
 
 	// Send AddQuestion request to datastore
-	bodyBytes := AddQuestionTest(t, jsonData)
+	bodyBytes := InsertTest(t, jsonData)
 
 	// Build QuestionResponse
 	var qResponse data.QuestionResponse
@@ -287,14 +259,13 @@ func TestCheckAnswerWithIncorrectAnswer(t *testing.T) {
 
 	// Build Question Request
 	aRequest.QuestionID = qRequest.QuestionID
-	aRequest.Response = "Morpheous"
 	jsonData, marshalErr = json.Marshal(aRequest)
 	if marshalErr != nil {
 		t.Errorf("New request error: %s", marshalErr.Error())
 	}
 
 	// Send AddQuestion request to datastore
-	bodyBytes = CheckAnswerTest(t, jsonData)
+	bodyBytes = GetTest(t, jsonData)
 
 	var aResponse data.AnswerResponse
 	unmarshalErr = json.Unmarshal(bodyBytes, &aResponse)
@@ -306,14 +277,9 @@ func TestCheckAnswerWithIncorrectAnswer(t *testing.T) {
 	if qRequest.Question != aResponse.Question {
 		t.Errorf("The question fields unexpectedly does NOT match")
 	}
-
-	// Check Answer field
-	if aRequest.Response == aResponse.Answer {
-		t.Errorf("The response unexpectedly matches answer")
-	}
 }
 
-func TestCheckAnswerWithoutAddQuestion(t *testing.T) {
+func TestGetAfterInsert(t *testing.T) {
 	// Initialize logging
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
@@ -329,14 +295,50 @@ func TestCheckAnswerWithoutAddQuestion(t *testing.T) {
 
 	// Build Question Request
 	aRequest.QuestionID = "abcdefgh"
-	aRequest.Response = "Morpheous"
 	jsonData, marshalErr := json.Marshal(aRequest)
 	if marshalErr != nil {
 		t.Errorf("New request error: %s", marshalErr.Error())
 	}
 
 	// Send CheckAnswer request to datastore
-	bodyBytes := CheckAnswerTest(t, jsonData)
+	bodyBytes := GetTest(t, jsonData)
+
+	// Build AnswerResponse
+	var aResponse data.AnswerResponse
+	unmarshalErr := json.Unmarshal(bodyBytes, &aResponse)
+	if unmarshalErr != nil {
+		t.Errorf(unmarshalErr.Error())
+	}
+
+	// Check Error field
+	if aResponse.Message != NoResultsReturnedFoundMsg {
+		t.Errorf("An unexpectedly message returned...")
+	}
+}
+
+func TestGetAfterDelete(t *testing.T) {
+	// Initialize logging
+	log.SetFlags(log.Ldate | log.Lshortfile)
+
+	// Set config environment variables
+	setConfigEnv("go-cache")
+
+	// Initialize controllers object
+	Initialize(config.UPDATE_CONFIG_DATA)
+
+	// Simulate a client sending a AnswerRequest to the datastore server
+	// Build AnswerRequest
+	var aRequest data.AnswerRequest
+
+	// Build Question Request
+	aRequest.QuestionID = "abcdefgh"
+	jsonData, marshalErr := json.Marshal(aRequest)
+	if marshalErr != nil {
+		t.Errorf("New request error: %s", marshalErr.Error())
+	}
+
+	// Send CheckAnswer request to datastore
+	bodyBytes := GetTest(t, jsonData)
 
 	// Build AnswerResponse
 	var aResponse data.AnswerResponse
