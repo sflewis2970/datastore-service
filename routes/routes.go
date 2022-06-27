@@ -16,6 +16,7 @@ func (rs *RoutingServer) setupRoutes() {
 	log.Print("Setting up Datastore service routes")
 
 	// Setup routes
+	rs.Router.HandleFunc("/", controllers.Home).Methods("GET")
 	rs.Router.HandleFunc("/api/v1/ds/status", controllers.Status).Methods("GET")
 	rs.Router.HandleFunc("/api/v1/ds/insert", controllers.Insert).Methods("POST")
 	rs.Router.HandleFunc("/api/v1/ds/get", controllers.Get).Methods("POST")
