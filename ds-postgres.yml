@@ -1,0 +1,39 @@
+services:
+  pgdb:
+    image: postgres:14.4
+    container_name: CN-PGDB
+    restart: always
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - 5324:5324
+    environment:
+      POSTGRES_PASSWORD: devStation
+      POSTGRES_DATABASE: main
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: CNT-PGAdmin
+    ports:
+      - 8000:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: radmin@db.net
+      PGADMIN_DEFAULT_PASSWORD: dbAdmin
+
+  ds-api:
+    image: golang:1:18
+    container_name: CNT-Datastore
+    build: .
+    depends_on: 
+      - pgdb
+    ports:
+      - 9090:9090
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PW: devStation
+      POSTGRES_DB: main
+
+volumes:
+  pg-data:
+    driver: local

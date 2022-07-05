@@ -4,10 +4,12 @@ import (
 	"log"
 	"math"
 
+	"github.com/sflewis2970/datastore-service/config"
 	"github.com/sflewis2970/datastore-service/models/data"
 	"github.com/sflewis2970/datastore-service/models/dsmysql"
 	"github.com/sflewis2970/datastore-service/models/dspostgresql"
 	"github.com/sflewis2970/datastore-service/models/gocache"
+	"github.com/sflewis2970/datastore-service/models/goredis"
 )
 
 // Datastore contants
@@ -26,11 +28,13 @@ func NewDBModel(activeDriver string) data.IDBModel {
 	var dbModel data.IDBModel
 
 	switch activeDriver {
-	case "go-cache":
+	case config.GOCACHE_DRIVER:
 		dbModel = gocache.GetGoCacheModel()
-	case "mysql":
+	case config.GOREDIS_DRIVER:
+		dbModel = goredis.GetGoRedisModel()
+	case config.MYSQL_DRIVER:
 		dbModel = dsmysql.GetMySQLModel()
-	case "postgres":
+	case config.POSTGRESQL_DRIVER:
 		dbModel = dspostgresql.GetPostGreSQLModel()
 	default:
 		log.Print("Unsupported database driver, active driver: ", activeDriver)

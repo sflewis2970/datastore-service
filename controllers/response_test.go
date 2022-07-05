@@ -130,7 +130,7 @@ func TestStatus(t *testing.T) {
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
 	// Set config environment variables
-	setConfigEnv("go-cache")
+	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
 	Initialize(config.UPDATE_CONFIG_DATA)
@@ -173,7 +173,7 @@ func TestInsert(t *testing.T) {
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
 	// Set config environment variables
-	setConfigEnv("go-cache")
+	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
 	Initialize(config.UPDATE_CONFIG_DATA)
@@ -215,7 +215,7 @@ func TestGetBeforeInsert(t *testing.T) {
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
 	// Set config environment variables
-	setConfigEnv("go-cache")
+	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
 	Initialize(config.UPDATE_CONFIG_DATA)
@@ -256,7 +256,7 @@ func TestGetAfterInsert(t *testing.T) {
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
 	// Set config environment variables
-	setConfigEnv("go-cache")
+	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
 	Initialize(config.UPDATE_CONFIG_DATA)
@@ -324,7 +324,7 @@ func TestGetAfterDelete(t *testing.T) {
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
 	// Set config environment variables
-	setConfigEnv("go-cache")
+	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
 	Initialize(config.UPDATE_CONFIG_DATA)

@@ -154,6 +154,7 @@ func TestNewSDBModel(t *testing.T) {
 		driverName string
 	}{
 		{testName: "GoCache driver test", testActive: true, driverName: config.GOCACHE_DRIVER},
+		{testName: "GoRedis driver test", testActive: false, driverName: config.GOREDIS_DRIVER},
 		{testName: "MySQL driver test", testActive: false, driverName: config.MYSQL_DRIVER},
 		{testName: "PostgreSQL driver test", testActive: false, driverName: config.POSTGRESQL_DRIVER},
 		{testName: "No driver test", testActive: true, driverName: ""},

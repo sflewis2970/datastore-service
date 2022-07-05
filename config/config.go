@@ -17,20 +17,24 @@ const UPDATE_CONFIG_DATA string = "update"
 
 // database drivers
 const (
-	GOCACHE_DRIVER    string = "go-cache"
+	GOCACHE_DRIVER    string = "gocache"
+	GOREDIS_DRIVER    string = "goredis"
 	MYSQL_DRIVER      string = "mysql"
 	POSTGRESQL_DRIVER string = "postgres"
 )
 
 // Config variable keys
 const (
-	HOSTNAME string = "hostname"
-	HOSTPORT string = "hostport"
+	HOSTNAME string = "HOSTNAME"
+	HOSTPORT string = "HOSTPORT"
 
 	// The choices for activedriver are: "go-cache", "mysql", "postgres"
-	ACTIVEDRIVER       string = "activedriver"
+	ACTIVEDRIVER       string = "ACTIVEDRIVER"
 	DEFAULT_EXPIRATION string = "expiration"
 	CLEANUP_INTERVAL   string = "cleanup"
+	GOREDIS_HOST       string = "GOREDIS_HOST"
+	GOREDIS_PORT       string = "GOREDIS_PORT"
+	GOREDIS_PASSWORD   string = "GOREDIS_PASSWORD"
 	MYSQL_CONNECTION   string = "mysql_connection"
 	POSTGRES_HOST      string = "postgres_host"
 	POSTGRES_PORT      string = "postgres_port"
@@ -40,6 +44,12 @@ const (
 type GoCache struct {
 	DefaultExpiration int `json:"expiration"`
 	CleanupInterval   int `json:"cleanup"`
+}
+
+type GoRedis struct {
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	Password string `json:"password"`
 }
 
 type MySQL struct {
@@ -57,6 +67,7 @@ type ConfigData struct {
 	HostPort     string `json:"hostport"`
 	ActiveDriver string `json:"active"`
 	GoCache      GoCache
+	GoRedis      GoRedis
 	MySQL        MySQL
 	PostGreSQL   PostGreSQL
 }
@@ -132,6 +143,7 @@ func (c *config) getConfigEnv() error {
 	switch c.cfgData.ActiveDriver {
 	case GOCACHE_DRIVER:
 		// Go-cache settings
+		log.Print("Setting go-cache environment variables...")
 		strVal := os.Getenv(DEFAULT_EXPIRATION)
 		if len(strVal) > 0 {
 			value, convErr := strconv.Atoi(strVal)
@@ -152,12 +164,20 @@ func (c *config) getConfigEnv() error {
 			c.cfgData.GoCache.DefaultExpiration = value
 		}
 
+	case GOREDIS_DRIVER:
+		// Go-redis settings
+		log.Print("Setting go-redis environment variables...")
+		c.cfgData.GoRedis.Host = os.Getenv(GOREDIS_HOST)
+		c.cfgData.GoRedis.Port = os.Getenv(GOREDIS_PORT)
+		c.cfgData.GoRedis.Password = os.Getenv(GOREDIS_PASSWORD)
+
 	case MYSQL_DRIVER:
 		// MySQL settings
 		c.cfgData.MySQL.Connection = os.Getenv(MYSQL_CONNECTION)
 
 	case POSTGRESQL_DRIVER:
 		// PostGres settings
+		log.Print("Setting postgres environment variables...")
 		c.cfgData.PostGreSQL.Host = os.Getenv(POSTGRES_HOST)
 		strVal := os.Getenv(POSTGRES_PORT)
 		if len(strVal) > 0 {
@@ -169,6 +189,9 @@ func (c *config) getConfigEnv() error {
 			c.cfgData.PostGreSQL.Port = value
 		}
 		c.cfgData.PostGreSQL.User = os.Getenv(POSTGRES_USER)
+	default:
+		log.Print("Could not find supported driver...")
+		log.Print("no database environment variables set...")
 	}
 
 	return nil

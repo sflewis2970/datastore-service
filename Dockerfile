@@ -1,17 +1,17 @@
 # Base the image off of the lastest version of 1.18
 FROM golang:1.18
 
-# Make the detsination directory
-RUN mkdir /app
+# Create container directory structure
+RUN mkdir -p /home/app
 
-# Copy files to the new directory
-ADD . /app
+# Copy files from the host to the container (in the specified directory)
+COPY . /home/app
 
 # Set working directory
-WORKDIR /app
+WORKDIR /home/app
 
 # Build the application
-RUN go build -o main ./cmd/services
+RUN go build -v -o ./main ./cmd/services
 
 # Run the app in the image
-CMD ["/app/main"]
+CMD ["./main"]
