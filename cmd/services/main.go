@@ -6,29 +6,29 @@ import (
 
 	"github.com/sflewis2970/datastore-service/config"
 	"github.com/sflewis2970/datastore-service/controllers"
-	"github.com/sflewis2970/datastore-service/routes"
+	"github.com/sflewis2970/datastore-service/router"
 )
 
 func main() {
 	// Initialize logging
-	log.SetFlags(log.Ldate | log.Lshortfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	// Get config data
-	cfgData, getCfgDataErr := config.Get().GetData(config.UPDATE_CONFIG_DATA)
-	if getCfgDataErr != nil {
-		log.Fatal("Error getting config data: ", getCfgDataErr)
+	cfgData, cfgDataErr := config.Get().GetData(config.REFRESH_CONFIG_DATA)
+	if cfgDataErr != nil {
+		log.Fatal("Error getting config data: ", cfgDataErr)
 	}
 
 	// Initialize controller
-	controllers.Initialize()
+	controllers.New()
 
 	// Create App
-	rs := routes.CreateRoutingServer()
+	msgRouter := router.New()
 
 	// Start Server
 	log.Print("Datastore service is ready...")
 
 	addr := cfgData.HostName + cfgData.HostPort
 	log.Print("The address used the service is: ", addr)
-	log.Fatal(http.ListenAndServe(addr, rs.Router))
+	log.Fatal(http.ListenAndServe(addr, msgRouter.MuxRouter))
 }
