@@ -1,8 +1,23 @@
-package data
+package messages
 
-import "database/sql"
+import (
+	"database/sql"
+	"math"
+)
 
 const NO_RESULTS_RETURNED_MSG string = "No results returned..."
+
+// Datastore contants
+const (
+	// DS_NOT_STARTED -- Datastore server has not been started or initialized
+	DS_NOT_STARTED int = iota
+	// DS_RUNNING -- Datastore server has been started and is ready for messages
+	DS_RUNNING
+	// DS_INVALID_SERVER_NAME -- When requesting the Datastore server status the wrong server name was provided
+	DS_INVALID_SERVER_NAME
+	// DS_UNAVAILABLE -- When requesting the Datastore server status the server never responded or the connect was refused
+	DS_UNAVAILABLE int = math.MaxInt
+)
 
 const (
 	RESULTS_DEFAULT          int64 = 0

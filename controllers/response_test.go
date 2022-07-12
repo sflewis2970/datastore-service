@@ -10,8 +10,7 @@ import (
 	"testing"
 
 	"github.com/sflewis2970/datastore-service/config"
-	"github.com/sflewis2970/datastore-service/models"
-	"github.com/sflewis2970/datastore-service/models/data"
+	"github.com/sflewis2970/datastore-service/models/messages"
 )
 
 // The envionment variables will be set on the server
@@ -133,7 +132,7 @@ func TestStatus(t *testing.T) {
 	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
-	Initialize(config.UPDATE_CONFIG_DATA)
+	New(config.REFRESH_CONFIG_DATA)
 
 	// Create new request
 	request, reqErr := http.NewRequest("GET", "/api/v1/ds/status", nil)
@@ -156,14 +155,14 @@ func TestStatus(t *testing.T) {
 	bodyBytes := respRecorder.Body.Bytes()
 
 	// Unmarshal StatusResponse JSON
-	var sResponse data.StatusResponse
+	var sResponse messages.StatusResponse
 	unmarshalErr := json.Unmarshal(bodyBytes, &sResponse)
 	if unmarshalErr != nil {
 		t.Errorf(unmarshalErr.Error())
 	}
 
 	// Check status field
-	if sResponse.Status != data.StatusCode(models.DS_RUNNING) {
+	if sResponse.Status != messages.StatusCode(messages.DS_RUNNING) {
 		t.Errorf("Server Status returned is not running, expected running status: got %d", sResponse.Status)
 	}
 }
@@ -176,11 +175,11 @@ func TestInsert(t *testing.T) {
 	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
-	Initialize(config.UPDATE_CONFIG_DATA)
+	New(config.REFRESH_CONFIG_DATA)
 
 	// Simulate a client sending a QuestionRequest to the datastore server
 	// Question Request
-	var qRequest data.QuestionRequest
+	var qRequest messages.QuestionRequest
 
 	// Build Question Request
 	qRequest.QuestionID = "aaaabbbb"
@@ -198,7 +197,7 @@ func TestInsert(t *testing.T) {
 	bodyBytes := InsertTest(t, jsonData)
 
 	// Unmarshal data to QuestionResponse
-	var qResponse data.QuestionResponse
+	var qResponse messages.QuestionResponse
 	unmarshalErr := json.Unmarshal(bodyBytes, &qResponse)
 	if unmarshalErr != nil {
 		t.Errorf(unmarshalErr.Error())
@@ -218,11 +217,11 @@ func TestGetBeforeInsert(t *testing.T) {
 	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
-	Initialize(config.UPDATE_CONFIG_DATA)
+	New(config.REFRESH_CONFIG_DATA)
 
 	// Simulate a client sending a AnswerRequest to the datastore server
 	// Build AnswerRequest
-	var aRequest data.AnswerRequest
+	var aRequest messages.AnswerRequest
 
 	// Build Question Request
 	aRequest.QuestionID = "aaaacccc"
@@ -234,7 +233,7 @@ func TestGetBeforeInsert(t *testing.T) {
 	// Send AddQuestion request to datastore
 	bodyBytes := GetTest(t, jsonData)
 
-	var aResponse data.AnswerResponse
+	var aResponse messages.AnswerResponse
 	unmarshalErr := json.Unmarshal(bodyBytes, &aResponse)
 	if unmarshalErr != nil {
 		t.Errorf(unmarshalErr.Error())
@@ -246,7 +245,7 @@ func TestGetBeforeInsert(t *testing.T) {
 	}
 
 	// Check Question field
-	if aResponse.Message != data.NO_RESULTS_RETURNED_MSG {
+	if aResponse.Message != messages.NO_RESULTS_RETURNED_MSG {
 		t.Errorf("The message unexpectedly returned the wrong message, message returned: %s", aResponse.Message)
 	}
 }
@@ -259,11 +258,11 @@ func TestGetAfterInsert(t *testing.T) {
 	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
-	Initialize(config.UPDATE_CONFIG_DATA)
+	New(config.REFRESH_CONFIG_DATA)
 
 	// Simulate a client sending a QuestionRequest to the datastore server
 	// Question Request
-	var qRequest data.QuestionRequest
+	var qRequest messages.QuestionRequest
 
 	// Build Question Request
 	qRequest.QuestionID = "aaaadddd"
@@ -281,7 +280,7 @@ func TestGetAfterInsert(t *testing.T) {
 	bodyBytes := InsertTest(t, jsonData)
 
 	// Unmarshal data to QuestionResponse
-	var qResponse data.QuestionResponse
+	var qResponse messages.QuestionResponse
 	unmarshalErr := json.Unmarshal(bodyBytes, &qResponse)
 	if unmarshalErr != nil {
 		t.Errorf(unmarshalErr.Error())
@@ -294,7 +293,7 @@ func TestGetAfterInsert(t *testing.T) {
 
 	// Simulate a client sending a AnswerRequest to the datastore server
 	// Build AnswerRequest
-	var aRequest data.AnswerRequest
+	var aRequest messages.AnswerRequest
 
 	// Build Question Request
 	aRequest.QuestionID = qRequest.QuestionID
@@ -307,7 +306,7 @@ func TestGetAfterInsert(t *testing.T) {
 	bodyBytes = GetTest(t, jsonData)
 
 	// Build AnswerResponse
-	var aResponse data.AnswerResponse
+	var aResponse messages.AnswerResponse
 	unmarshalErr = json.Unmarshal(bodyBytes, &aResponse)
 	if unmarshalErr != nil {
 		t.Errorf(unmarshalErr.Error())
@@ -327,11 +326,11 @@ func TestGetAfterDelete(t *testing.T) {
 	setConfigEnv(config.GOCACHE_DRIVER)
 
 	// Initialize controllers object
-	Initialize(config.UPDATE_CONFIG_DATA)
+	New(config.REFRESH_CONFIG_DATA)
 
 	// Simulate a client sending a QuestionRequest to the datastore server
 	// Question Request
-	var qRequest data.QuestionRequest
+	var qRequest messages.QuestionRequest
 
 	// Build Question Request
 	qRequest.QuestionID = "aaaaeeee"
@@ -349,7 +348,7 @@ func TestGetAfterDelete(t *testing.T) {
 	bodyBytes := InsertTest(t, jsonData)
 
 	// Unmarshal data to QuestionResponse
-	var qResponse data.QuestionResponse
+	var qResponse messages.QuestionResponse
 	unmarshalErr := json.Unmarshal(bodyBytes, &qResponse)
 	if unmarshalErr != nil {
 		t.Errorf(unmarshalErr.Error())
@@ -362,7 +361,7 @@ func TestGetAfterDelete(t *testing.T) {
 
 	// Simulate a client sending a AnswerRequest to the datastore server
 	// Build AnswerRequest
-	var aRequest data.AnswerRequest
+	var aRequest messages.AnswerRequest
 
 	// Build Question Request
 	aRequest.QuestionID = qRequest.QuestionID
@@ -375,14 +374,14 @@ func TestGetAfterDelete(t *testing.T) {
 	bodyBytes = GetTest(t, jsonData)
 
 	// Build AnswerResponse
-	var aResponse data.AnswerResponse
+	var aResponse messages.AnswerResponse
 	unmarshalErr = json.Unmarshal(bodyBytes, &aResponse)
 	if unmarshalErr != nil {
 		t.Errorf(unmarshalErr.Error())
 	}
 
 	// Check Error field
-	if aResponse.Message == data.NO_RESULTS_RETURNED_MSG {
+	if aResponse.Message == messages.NO_RESULTS_RETURNED_MSG {
 		t.Errorf("An unexpectedly 'No results returned' message is returned...")
 	}
 
@@ -398,7 +397,7 @@ func TestGetAfterDelete(t *testing.T) {
 	log.Print("aResponse: ", aResponse)
 
 	// Check Error field
-	if aResponse.Message != data.NO_RESULTS_RETURNED_MSG {
+	if aResponse.Message != messages.NO_RESULTS_RETURNED_MSG {
 		t.Errorf("'No results returned' message did NOT returned...")
 	}
 }

@@ -13,7 +13,7 @@ import (
 
 const BASE_DIR_NAME string = "datastore-service"
 const CONFIG_FILE_NAME string = "./config/config.json"
-const UPDATE_CONFIG_DATA string = "update"
+const REFRESH_CONFIG_DATA string = "refesh"
 
 // database drivers
 const (
@@ -200,7 +200,7 @@ func (c *config) getConfigEnv() error {
 // Exported type functions
 func (c *config) GetData(args ...string) (*ConfigData, error) {
 	if len(args) > 0 {
-		if args[0] == UPDATE_CONFIG_DATA {
+		if args[0] == REFRESH_CONFIG_DATA {
 			useCfgFile := os.Getenv("USECONFIGFILE")
 			if len(useCfgFile) > 0 {
 				log.Print("Using config file to load config")

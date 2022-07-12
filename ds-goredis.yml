@@ -10,8 +10,8 @@ services:
       - cache:/data
 
   dsapi:
-    image: datastore
-    container_name: CNT-DS
+    image: ds-service
+    container_name: CNT-DSService
     depends_on: 
       - cache
     ports:
