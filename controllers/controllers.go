@@ -5,30 +5,36 @@ import (
 	"sync"
 
 	"github.com/sflewis2970/datastore-service/config"
+	"github.com/sflewis2970/datastore-service/models"
 )
 
-type controller struct {
-	dbMutex sync.Mutex
-	cfgData *config.ConfigData
+type Controller struct {
+	dbMutex   sync.Mutex
+	dataModel *models.Model
+	cfgData   *config.ConfigData
 }
 
-var ctrlr *controller
+var controller *Controller
 
-func Initialize(args ...string) {
+func New(args ...string) {
 	if len(args) == 0 {
-		log.Print("Adding an empty string...")
+		log.Print("Adding an empty parameter...")
 		args = append(args, "")
 	}
 
-	if ctrlr == nil {
-		ctrlr = new(controller)
+	if controller == nil {
+		log.Print("Creating controller object...")
+		controller = new(Controller)
 
 		// Load config data
-		var getCfgDataErr error
-		ctrlr.cfgData, getCfgDataErr = config.Get().GetData(args[0])
-		if getCfgDataErr != nil {
-			log.Print("Error getting config data: ", getCfgDataErr)
+		var cfgDataErr error
+		controller.cfgData, cfgDataErr = config.Get().GetData(args[0])
+		if cfgDataErr != nil {
+			log.Print("Error getting config data: ", cfgDataErr)
 			return
 		}
+
+		// Create dataModel
+		controller.dataModel = models.New()
 	}
 }
