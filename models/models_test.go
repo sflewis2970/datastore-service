@@ -6,17 +6,17 @@ import (
 	"testing"
 
 	"github.com/sflewis2970/datastore-service/config"
-	"github.com/sflewis2970/datastore-service/models/data"
+	"github.com/sflewis2970/datastore-service/models/messages"
 )
 
-func checkDBDriver(t *testing.T, driverName string, gotDBModel data.IDBModel) {
+func checkDBDriver(t *testing.T, driverName string, gotDBModel messages.IDBModel) {
 	if gotDBModel == nil {
 		t.Errorf("NewDBModel(%v): returned an invalid object", gotDBModel)
 		return
 	}
 
 	// Test insert question
-	var qRequest data.QuestionRequest
+	var qRequest messages.QuestionRequest
 	qRequest.QuestionID = "aaaaqqqq"
 	qRequest.Question = "What is 4 / 2?"
 	qRequest.Answer = "2"
@@ -70,7 +70,7 @@ func checkDBDriver(t *testing.T, driverName string, gotDBModel data.IDBModel) {
 
 }
 
-func checkInvalidDriver(t *testing.T, driverName string, gotDBModel data.IDBModel) {
+func checkInvalidDriver(t *testing.T, driverName string, gotDBModel messages.IDBModel) {
 	if gotDBModel != nil {
 		t.Errorf("NewDBModel(%v): Invalid driver should not generate a valid object", gotDBModel)
 	}
@@ -147,6 +147,9 @@ func TestNewSDBModel(t *testing.T) {
 	// Initialize logging
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
+	// new model
+	model := New()
+
 	// Test cases
 	testCases := []struct {
 		testName   string
@@ -165,13 +168,13 @@ func TestNewSDBModel(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			setConfigEnv(tc.driverName)
 
-			_, getCfgDataErr := config.Get().GetData(config.UPDATE_CONFIG_DATA)
+			_, getCfgDataErr := config.Get().GetData(config.REFRESH_CONFIG_DATA)
 			if getCfgDataErr != nil {
 				t.Errorf("Error getting config data...")
 				return
 			}
 
-			gotDBModel := NewDBModel(tc.driverName)
+			gotDBModel := model.NewDBModel(tc.driverName)
 
 			switch tc.driverName {
 			case config.GOCACHE_DRIVER:
