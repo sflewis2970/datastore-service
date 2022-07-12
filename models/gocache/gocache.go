@@ -8,7 +8,7 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/sflewis2970/datastore-service/config"
-	"github.com/sflewis2970/datastore-service/models/data"
+	"github.com/sflewis2970/datastore-service/models/messages"
 )
 
 const (
@@ -51,8 +51,8 @@ func (dbm *dbModel) Ping() error {
 }
 
 // Insert a single record into table
-func (dbm *dbModel) Insert(qRequest data.QuestionRequest) (int64, error) {
-	var qt data.QuestionTable
+func (dbm *dbModel) Insert(qRequest messages.QuestionRequest) (int64, error) {
+	var qt messages.QuestionTable
 	qt.Question = qRequest.Question
 	qt.Category = qRequest.Category
 	qt.Answer = qRequest.Answer
@@ -60,41 +60,41 @@ func (dbm *dbModel) Insert(qRequest data.QuestionRequest) (int64, error) {
 	log.Print("Adding a new record to map, ID: ", qRequest.QuestionID)
 	dbm.memCache.Set(qRequest.QuestionID, qt, cache.DefaultExpiration)
 
-	return data.RESULTS_DEFAULT, nil
+	return messages.RESULTS_DEFAULT, nil
 }
 
 // Get a single record from table
-func (dbm *dbModel) Get(questionID string) (data.QuestionTable, error) {
+func (dbm *dbModel) Get(questionID string) (messages.QuestionTable, error) {
 	log.Print("Getting record from the map, with ID: ", questionID)
 
 	item, itemFound := dbm.memCache.Get(questionID)
 
-	var qt data.QuestionTable
+	var qt messages.QuestionTable
 	if itemFound {
 		ok := false
-		qt, ok = item.(data.QuestionTable)
+		qt, ok = item.(messages.QuestionTable)
 		if !ok {
 			log.Print(GOCACHE_DB_NAME_MSG+GOCACHE_CONVERSION_ERROR, item)
 		}
 	} else {
-		log.Print(data.NO_RESULTS_RETURNED_MSG)
+		log.Print(messages.NO_RESULTS_RETURNED_MSG)
 	}
 
 	return qt, nil
 }
 
 // Update a single record in table
-func (dbm *dbModel) Update(qRequest data.QuestionRequest) (int64, error) {
+func (dbm *dbModel) Update(qRequest messages.QuestionRequest) (int64, error) {
 	log.Println("Updating record in the map")
 
-	var qt data.QuestionTable
+	var qt messages.QuestionTable
 	qt.Question = qRequest.Question
 	qt.Category = qRequest.Category
 	qt.Answer = qRequest.Answer
 
 	dbm.memCache.Set(qRequest.QuestionID, qt, cache.DefaultExpiration)
 
-	return data.RESULTS_DEFAULT, nil
+	return messages.RESULTS_DEFAULT, nil
 }
 
 // Delete a single record from table
@@ -104,25 +104,26 @@ func (dbm *dbModel) Delete(questionID string) (int64, error) {
 	// Delete the record from map
 	dbm.memCache.Delete(questionID)
 
-	return data.RESULTS_DEFAULT, nil
+	return messages.RESULTS_DEFAULT, nil
 }
 
-func GetGoCacheModel() *dbModel {
-	if goCacheModel == nil {
-		// Initialize go-cache in-memory cache model
-		goCacheModel = new(dbModel)
+func GetGoCacheModel(cfgData *config.ConfigData) *dbModel {
+	// Initialize go-cache in-memory cache model
+	goCacheModel = new(dbModel)
 
-		// Load config data
-		var getCfgDataErr error
-		goCacheModel.cfgData, getCfgDataErr = config.Get().GetData()
-		if getCfgDataErr != nil {
-			log.Print(GOCACHE_DB_NAME_MSG+GOCACHE_GET_CONFIG_DATA_ERROR, getCfgDataErr)
-			return nil
-		}
+	// Assign config data
+	goCacheModel.cfgData = cfgData
 
-		log.Print(GOCACHE_DB_NAME_MSG + GOCACHE_CREATE_CACHE_MSG)
-		goCacheModel.memCache = cache.New(time.Duration(goCacheModel.cfgData.GoCache.DefaultExpiration)*time.Minute, time.Duration(goCacheModel.cfgData.GoCache.CleanupInterval)*time.Minute)
+	// Load config data
+	var cfgDataErr error
+	goCacheModel.cfgData, cfgDataErr = config.Get().GetData()
+	if cfgDataErr != nil {
+		log.Print(GOCACHE_DB_NAME_MSG+GOCACHE_GET_CONFIG_DATA_ERROR, cfgDataErr)
+		return nil
 	}
+
+	log.Print(GOCACHE_DB_NAME_MSG + GOCACHE_CREATE_CACHE_MSG)
+	goCacheModel.memCache = cache.New(time.Duration(goCacheModel.cfgData.GoCache.DefaultExpiration)*time.Minute, time.Duration(goCacheModel.cfgData.GoCache.CleanupInterval)*time.Minute)
 
 	return goCacheModel
 }
