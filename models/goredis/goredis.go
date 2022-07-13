@@ -14,28 +14,28 @@ import (
 )
 
 const (
-	GOREDIS_DB_NAME_MSG      string = "GO_REDIS: "
-	GOREDIS_CREATE_CACHE_MSG string = "Creating in-memory map to store data..."
+	REDIS_DB_NAME_MSG      string = "GO_REDIS: "
+	REDIS_CREATE_CACHE_MSG string = "Creating in-memory map to store data..."
 )
 
 const (
-	GOREDIS_GET_CONFIG_ERROR      string = "Getting config error...: "
-	GOREDIS_GET_CONFIG_DATA_ERROR string = "Getting config data error...: "
-	GOREDIS_OPEN_ERROR            string = "Open method not implemented..."
-	GOREDIS_MARSHAL_ERROR         string = "Marshaling error...: "
-	GOREDIS_UNMARSHAL_ERROR       string = "Unmarshaling error...: "
-	GOREDIS_INSERT_ERROR          string = "Insert error...: "
-	GOREDIS_ITEM_NOT_FOUND_ERROR  string = "Item not found...: "
-	GOREDIS_GET_ERROR             string = "Get error...: "
-	GOREDIS_UPDATE_ERROR          string = "Update error..."
-	GOREDIS_DELETE_ERROR          string = "Delete error..."
-	GOREDIS_RESULTS_ERROR         string = "Results error...: "
-	GOREDIS_ROWS_AFFECTED_ERROR   string = "Rows affected error...: "
-	GOREDIS_PING_ERROR            string = "Error pinging in-memory cache server...: "
-	GOREDIS_CONVERSION_ERROR      string = "Conversion error...: "
+	REDIS_GET_CONFIG_ERROR      string = "Getting config error...: "
+	REDIS_GET_CONFIG_DATA_ERROR string = "Getting config data error...: "
+	REDIS_OPEN_ERROR            string = "Open method not implemented..."
+	REDIS_MARSHAL_ERROR         string = "Marshaling error...: "
+	REDIS_UNMARSHAL_ERROR       string = "Unmarshaling error...: "
+	REDIS_INSERT_ERROR          string = "Insert error...: "
+	REDIS_ITEM_NOT_FOUND_ERROR  string = "Item not found...: "
+	REDIS_GET_ERROR             string = "Get error...: "
+	REDIS_UPDATE_ERROR          string = "Update error..."
+	REDIS_DELETE_ERROR          string = "Delete error...: "
+	REDIS_RESULTS_ERROR         string = "Results error...: "
+	REDIS_ROWS_AFFECTED_ERROR   string = "Rows affected error...: "
+	REDIS_PING_ERROR            string = "Error pinging in-memory cache server...: "
+	REDIS_CONVERSION_ERROR      string = "Conversion error...: "
 )
 
-var goRedisModel *dbModel
+var redisModel *dbModel
 
 type dbModel struct {
 	cfgData  *config.ConfigData
@@ -43,7 +43,7 @@ type dbModel struct {
 }
 
 func (dbm *dbModel) Open(sqlDriverName string) (*sql.DB, error) {
-	return nil, errors.New(GOREDIS_DB_NAME_MSG + GOREDIS_OPEN_ERROR)
+	return nil, errors.New(REDIS_DB_NAME_MSG + REDIS_OPEN_ERROR)
 }
 
 // Ping database server, since this is local to the server make sure the object for storing data is created
@@ -53,7 +53,7 @@ func (dbm *dbModel) Ping() error {
 	statusCmd := dbm.memCache.Ping(ctx)
 	pingErr := statusCmd.Err()
 	if pingErr != nil {
-		log.Print(GOREDIS_DB_NAME_MSG+GOREDIS_PING_ERROR, pingErr)
+		log.Print(REDIS_DB_NAME_MSG+REDIS_PING_ERROR, pingErr)
 		return pingErr
 	}
 
@@ -71,14 +71,14 @@ func (dbm *dbModel) Insert(qRequest messages.QuestionRequest) (int64, error) {
 
 	byteStream, marshalErr := json.Marshal(qt)
 	if marshalErr != nil {
-		log.Print(GOREDIS_DB_NAME_MSG+GOREDIS_MARSHAL_ERROR, marshalErr)
+		log.Print(REDIS_DB_NAME_MSG+REDIS_MARSHAL_ERROR, marshalErr)
 		return messages.RESULTS_DEFAULT, marshalErr
 	}
 
 	log.Print("Adding a new record to map, ID: ", qRequest.QuestionID)
 	setErr := dbm.memCache.Set(ctx, qRequest.QuestionID, byteStream, time.Duration(0)).Err()
 	if setErr != nil {
-		log.Print(GOREDIS_DB_NAME_MSG+GOREDIS_INSERT_ERROR, setErr)
+		log.Print(REDIS_DB_NAME_MSG+REDIS_INSERT_ERROR, setErr)
 		return messages.RESULTS_DEFAULT, setErr
 	}
 
@@ -93,15 +93,15 @@ func (dbm *dbModel) Get(questionID string) (messages.QuestionTable, error) {
 	ctx := context.Background()
 	getResult, getErr := dbm.memCache.Get(ctx, questionID).Result()
 	if getErr == redis.Nil {
-		log.Print(GOREDIS_DB_NAME_MSG + GOREDIS_ITEM_NOT_FOUND_ERROR)
+		log.Print(REDIS_DB_NAME_MSG + REDIS_ITEM_NOT_FOUND_ERROR)
 		return messages.QuestionTable{}, nil
 	} else if getErr != nil {
-		log.Print(GOREDIS_DB_NAME_MSG+GOREDIS_GET_ERROR, getErr)
+		log.Print(REDIS_DB_NAME_MSG+REDIS_GET_ERROR, getErr)
 		return messages.QuestionTable{}, getErr
 	} else {
 		unmarshalErr := json.Unmarshal([]byte(getResult), &qt)
 		if unmarshalErr != nil {
-			log.Print(GOREDIS_DB_NAME_MSG+GOREDIS_UNMARSHAL_ERROR, unmarshalErr)
+			log.Print(REDIS_DB_NAME_MSG+REDIS_UNMARSHAL_ERROR, unmarshalErr)
 			return messages.QuestionTable{}, unmarshalErr
 		}
 	}
@@ -133,31 +133,40 @@ func (dbm *dbModel) Delete(questionID string) (int64, error) {
 	ctx := context.Background()
 	delErr := dbm.memCache.Del(ctx, questionID).Err()
 	if delErr != nil {
-
+		log.Print(REDIS_DB_NAME_MSG+REDIS_DELETE_ERROR, delErr)
 	}
 
 	return messages.RESULTS_DEFAULT, nil
 }
 
-func GetGoRedisModel(cfgData *config.ConfigData) *dbModel {
+func GetRedisModel(cfgData *config.ConfigData) *dbModel {
 	// Initialize go-cache in-memory cache model
 	log.Print("Creating goRedis dbModel object...")
-	goRedisModel = new(dbModel)
+	redisModel = new(dbModel)
 
 	// Assign config data
-	goRedisModel.cfgData = cfgData
+	redisModel.cfgData = cfgData
 
 	// Define go-redis cache settings
-	log.Print(GOREDIS_DB_NAME_MSG + GOREDIS_CREATE_CACHE_MSG)
-	addr := goRedisModel.cfgData.GoRedis.Host + goRedisModel.cfgData.GoRedis.Port
-	log.Print("The goredis address is...: ", addr)
+	log.Print(REDIS_DB_NAME_MSG + REDIS_CREATE_CACHE_MSG)
 
-	// Create go-redis in-memory cache
-	goRedisModel.memCache = redis.NewClient(&redis.Options{
-		Addr:     addr, //GoRedis Server Address,
+	// Define connection variables
+	var redisOptions *redis.Options
+
+	// The config package handles reading the environment variables and parsing the url.
+	// Once the external packages access the values, the environment has lready been taken
+	// care of.
+	addr := redisModel.cfgData.Redis.URL + redisModel.cfgData.Redis.Port
+	log.Print("The redis address is...: ", addr)
+
+	redisOptions = &redis.Options{
+		Addr:     addr, // redis Server Address,
 		Password: "",   // no password set
 		DB:       0,    // use default DB
-	})
+	}
 
-	return goRedisModel
+	// Create go-redis in-memory cache
+	redisModel.memCache = redis.NewClient(redisOptions)
+
+	return redisModel
 }
