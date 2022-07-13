@@ -198,8 +198,8 @@ func (c *config) getConfigEnv() error {
 				c.cfgData.Redis.Port = ":" + redisURL.Port()
 			}
 
-			log.Print("Redis URL:", c.cfgData.Redis.URL)
-			log.Print("Redis Port:", c.cfgData.Redis.Port)
+			log.Print("Redis URL: ", c.cfgData.Redis.URL)
+			log.Print("Redis Port: ", c.cfgData.Redis.Port)
 		}
 
 		c.cfgData.Redis.URL = os.Getenv(REDIS_URL)
