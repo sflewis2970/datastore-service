@@ -145,7 +145,7 @@ func setConfigEnv(driverName string) error {
 
 func TestNewSDBModel(t *testing.T) {
 	// Initialize logging
-	log.SetFlags(log.Ldate | log.Lshortfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	// new model
 	model := New()
@@ -157,8 +157,7 @@ func TestNewSDBModel(t *testing.T) {
 		driverName string
 	}{
 		{testName: "GoCache driver test", testActive: true, driverName: config.GOCACHE_DRIVER},
-		{testName: "GoRedis driver test", testActive: false, driverName: config.GOREDIS_DRIVER},
-		{testName: "MySQL driver test", testActive: false, driverName: config.MYSQL_DRIVER},
+		{testName: "Redis driver test", testActive: false, driverName: config.REDIS_DRIVER},
 		{testName: "PostgreSQL driver test", testActive: false, driverName: config.POSTGRESQL_DRIVER},
 		{testName: "No driver test", testActive: true, driverName: ""},
 		{testName: "Bad driver test", testActive: true, driverName: "baddrivername"},
@@ -179,7 +178,7 @@ func TestNewSDBModel(t *testing.T) {
 			switch tc.driverName {
 			case config.GOCACHE_DRIVER:
 				fallthrough
-			case config.MYSQL_DRIVER:
+			case config.REDIS_DRIVER:
 				fallthrough
 			case config.POSTGRESQL_DRIVER:
 				if tc.testActive {
