@@ -80,14 +80,14 @@ func checkInvalidDriver(t *testing.T, driverName string, gotDBModel messages.IDB
 // For testing, set the variables manually
 func setConfigEnv(driverName string) error {
 	// Set hostname environment variable
-	setErr := os.Setenv(config.HOSTNAME, "")
+	setErr := os.Setenv(config.HOST, "")
 	if setErr != nil {
 		log.Print("Error setting config vars...")
 		return setErr
 	}
 
 	// Set hostport environment variable
-	setErr = os.Setenv(config.HOSTPORT, ":9090")
+	setErr = os.Setenv(config.PORT, ":9090")
 	if setErr != nil {
 		log.Print("Error setting config vars...")
 		return setErr
@@ -102,7 +102,7 @@ func setConfigEnv(driverName string) error {
 
 	// Set Go-cache environment variable
 	switch os.Getenv(config.ACTIVEDRIVER) {
-	case "go-cache":
+	case config.GOCACHE_DRIVER:
 		setErr = os.Setenv(config.DEFAULT_EXPIRATION, "1")
 		if setErr != nil {
 			log.Print("Error setting config vars...")
@@ -114,13 +114,8 @@ func setConfigEnv(driverName string) error {
 			log.Print("Error setting config vars...")
 			return setErr
 		}
-	case "mysql":
-		setErr = os.Setenv(config.MYSQL_CONNECTION, "root:devStation@tcp(127.0.0.1:3306)/")
-		if setErr != nil {
-			log.Print("Error setting config vars...")
-			return setErr
-		}
-	case "postgres":
+	case config.REDIS_DRIVER:
+	case config.POSTGRESQL_DRIVER:
 		setErr = os.Setenv(config.POSTGRES_HOST, "127.0.0.1")
 		if setErr != nil {
 			log.Print("Error setting config vars...")

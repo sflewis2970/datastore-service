@@ -28,7 +28,7 @@ func main() {
 	// Start Server
 	log.Print("Datastore service is ready...")
 
-	addr := cfgData.HostName + cfgData.HostPort
+	addr := cfgData.Host + cfgData.Port
 	log.Print("The address used the service is: ", addr)
 	log.Fatal(http.ListenAndServe(addr, msgRouter.MuxRouter))
 }
