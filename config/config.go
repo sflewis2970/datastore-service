@@ -200,6 +200,11 @@ func (c *config) getConfigEnv() error {
 
 			log.Print("Redis URL: ", c.cfgData.Redis.URL)
 			log.Print("Redis Port: ", c.cfgData.Redis.Port)
+
+			// redis Password
+			// var passwdSet bool
+			c.cfgData.Redis.Password, _ = redisURL.User.Password()
+			log.Print("Password: ", c.cfgData.Redis.Password)
 		} else {
 			c.cfgData.Redis.URL = os.Getenv(REDIS_URL)
 			c.cfgData.Redis.Port = os.Getenv(REDIS_PORT)
