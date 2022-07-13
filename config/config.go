@@ -200,11 +200,11 @@ func (c *config) getConfigEnv() error {
 
 			log.Print("Redis URL: ", c.cfgData.Redis.URL)
 			log.Print("Redis Port: ", c.cfgData.Redis.Port)
+		} else {
+			c.cfgData.Redis.URL = os.Getenv(REDIS_URL)
+			c.cfgData.Redis.Port = os.Getenv(REDIS_PORT)
+			c.cfgData.Redis.Password = os.Getenv(REDIS_PASSWORD)
 		}
-
-		c.cfgData.Redis.URL = os.Getenv(REDIS_URL)
-		c.cfgData.Redis.Port = os.Getenv(REDIS_PORT)
-		c.cfgData.Redis.Password = os.Getenv(REDIS_PASSWORD)
 
 	case POSTGRESQL_DRIVER:
 		// PostGres settings
