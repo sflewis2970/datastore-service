@@ -162,9 +162,9 @@ func GetRedisModel(cfgData *config.ConfigData) *dbModel {
 	log.Print("The redis address is...: ", addr)
 
 	redisOptions = &redis.Options{
-		Addr:     addr, // redis Server Address,
-		Password: "",   // no password set
-		DB:       0,    // use default DB
+		Addr:     addr,                              // redis Server Address,
+		Password: redisModel.cfgData.Redis.Password, // set password
+		DB:       0,                                 // use default DB
 	}
 
 	// Create go-redis in-memory cache
