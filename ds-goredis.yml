@@ -17,8 +17,8 @@ services:
     ports:
       - 9090:9090
     environment:
-      HOSTNAME:
-      HOSTPORT: :9090
+      HOST:
+      PORT: :9090
       ACTIVEDRIVER: goredis
       REDIS_TLS_URL: cache
       REDIS_URL: cache

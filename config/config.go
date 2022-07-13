@@ -25,13 +25,13 @@ const (
 
 // Config variable keys
 const (
-	HOSTNAME string = "HOSTNAME"
-	HOSTPORT string = "HOSTPORT"
+	HOST string = "HOST"
+	PORT string = "PORT"
 
 	// System environment
 	ENV string = "ENV"
 
-	// The choices for activedriver are: "go-cache", "go-redis", "postgres"
+	// The choices for activedriver are: "go-cache", "redis", "postgres"
 	ACTIVEDRIVER string = "ACTIVEDRIVER"
 
 	DEFAULT_EXPIRATION string = "expiration"
@@ -70,8 +70,8 @@ type PostGreSQL struct {
 }
 
 type ConfigData struct {
-	HostName     string `json:"hostname"`
-	HostPort     string `json:"hostport"`
+	Host         string `json:"host"`
+	Port         string `json:"port"`
 	Env          string `json:"env"`
 	ActiveDriver string `json:"active"`
 	GoCache      GoCache
@@ -143,8 +143,8 @@ func (c *config) getConfigEnv() error {
 
 	// Update config data
 	// Base config settings
-	c.cfgData.HostName = os.Getenv(HOSTNAME)
-	c.cfgData.HostPort = os.Getenv(HOSTPORT)
+	c.cfgData.Host = os.Getenv(HOST)
+	c.cfgData.Port = os.Getenv(PORT)
 	c.cfgData.ActiveDriver = os.Getenv(ACTIVEDRIVER)
 	c.cfgData.Env = os.Getenv(ENV)
 

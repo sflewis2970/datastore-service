@@ -17,14 +17,14 @@ import (
 // For testing, set the variables manually
 func setConfigEnv(activeDriver string) error {
 	// Set hostname environment variable
-	setErr := os.Setenv(config.HOSTNAME, "")
+	setErr := os.Setenv(config.HOST, "")
 	if setErr != nil {
 		log.Print("Error setting config vars...")
 		return setErr
 	}
 
 	// Set hostport environment variable
-	setErr = os.Setenv(config.HOSTPORT, ":9090")
+	setErr = os.Setenv(config.PORT, ":9090")
 	if setErr != nil {
 		log.Print("Error setting config vars...")
 		return setErr
