@@ -180,6 +180,7 @@ func (c *config) getConfigEnv() error {
 		c.cfgData.Redis.Port = os.Getenv(REDIS_PORT)
 
 		if c.cfgData.Env == PRODUCTION {
+			log.Print("Loading prod settings...")
 			redisURL, parseErr := url.Parse(c.cfgData.Redis.URL)
 			if parseErr != nil {
 				log.Print("Error parsing url: ", parseErr)
@@ -189,6 +190,9 @@ func (c *config) getConfigEnv() error {
 			// Update URL and Port after parsing
 			c.cfgData.Redis.URL = redisURL.Host
 			c.cfgData.Redis.Port = ":" + redisURL.Port()
+
+			log.Print("Redis URL:", c.cfgData.Redis.URL)
+			log.Print("Redis Port:", c.cfgData.Redis.Port)
 		}
 
 		c.cfgData.Redis.URL = os.Getenv(REDIS_URL)
