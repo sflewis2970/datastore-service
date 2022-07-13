@@ -18,12 +18,11 @@ services:
       - 9090:9090
     environment:
       HOST:
-      PORT: :9090
-      ACTIVEDRIVER: goredis
+      PORT: 9090
+      ACTIVEDRIVER: redis
       REDIS_TLS_URL: cache
       REDIS_URL: cache
-      REDIS_PORT: :6379
-      REDIS_PASSWORD: 
+      REDIS_PORT: 6379
 
 volumes:
   cache:
