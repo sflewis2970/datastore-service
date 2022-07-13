@@ -191,8 +191,8 @@ func (m *Model) NewDBModel(activeDriver string) messages.IDBModel {
 		switch activeDriver {
 		case config.GOCACHE_DRIVER:
 			return gocache.GetGoCacheModel(m.cfgData)
-		case config.GOREDIS_DRIVER:
-			return goredis.GetGoRedisModel(m.cfgData)
+		case config.REDIS_DRIVER:
+			return goredis.GetRedisModel(m.cfgData)
 		case config.POSTGRESQL_DRIVER:
 			return dspostgresql.GetPostGreSQLModel(m.cfgData)
 		default:

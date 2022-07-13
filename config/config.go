@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -18,8 +19,7 @@ const REFRESH_CONFIG_DATA string = "refesh"
 // database drivers
 const (
 	GOCACHE_DRIVER    string = "gocache"
-	GOREDIS_DRIVER    string = "goredis"
-	MYSQL_DRIVER      string = "mysql"
+	REDIS_DRIVER      string = "redis"
 	POSTGRESQL_DRIVER string = "postgres"
 )
 
@@ -28,17 +28,27 @@ const (
 	HOSTNAME string = "HOSTNAME"
 	HOSTPORT string = "HOSTPORT"
 
-	// The choices for activedriver are: "go-cache", "mysql", "postgres"
-	ACTIVEDRIVER       string = "ACTIVEDRIVER"
+	// System environment
+	ENV string = "ENV"
+
+	// The choices for activedriver are: "go-cache", "go-redis", "postgres"
+	ACTIVEDRIVER string = "ACTIVEDRIVER"
+
 	DEFAULT_EXPIRATION string = "expiration"
 	CLEANUP_INTERVAL   string = "cleanup"
-	GOREDIS_HOST       string = "GOREDIS_HOST"
-	GOREDIS_PORT       string = "GOREDIS_PORT"
-	GOREDIS_PASSWORD   string = "GOREDIS_PASSWORD"
+	REDIS_TLS_URL      string = "REDIS_TLS_URL"
+	REDIS_URL          string = "REDIS_URL"
+	REDIS_PORT         string = "REDIS_PORT"
+	REDIS_PASSWORD     string = "REDIS_PASSWORD"
 	MYSQL_CONNECTION   string = "mysql_connection"
 	POSTGRES_HOST      string = "postgres_host"
 	POSTGRES_PORT      string = "postgres_port"
 	POSTGRES_USER      string = "postgres_user"
+)
+
+// Config variable values
+const (
+	PRODUCTION string = "PROD"
 )
 
 type GoCache struct {
@@ -46,14 +56,11 @@ type GoCache struct {
 	CleanupInterval   int `json:"cleanup"`
 }
 
-type GoRedis struct {
-	Host     string `json:"host"`
+type Redis struct {
+	TLS_URL  string `json:"tls_url"`
+	URL      string `json:"host"`
 	Port     string `json:"port"`
 	Password string `json:"password"`
-}
-
-type MySQL struct {
-	Connection string `json:"connection"`
 }
 
 type PostGreSQL struct {
@@ -65,10 +72,10 @@ type PostGreSQL struct {
 type ConfigData struct {
 	HostName     string `json:"hostname"`
 	HostPort     string `json:"hostport"`
+	Env          string `json:"env"`
 	ActiveDriver string `json:"active"`
 	GoCache      GoCache
-	GoRedis      GoRedis
-	MySQL        MySQL
+	Redis        Redis
 	PostGreSQL   PostGreSQL
 }
 
@@ -139,6 +146,7 @@ func (c *config) getConfigEnv() error {
 	c.cfgData.HostName = os.Getenv(HOSTNAME)
 	c.cfgData.HostPort = os.Getenv(HOSTPORT)
 	c.cfgData.ActiveDriver = os.Getenv(ACTIVEDRIVER)
+	c.cfgData.Env = os.Getenv(ENV)
 
 	switch c.cfgData.ActiveDriver {
 	case GOCACHE_DRIVER:
@@ -164,16 +172,28 @@ func (c *config) getConfigEnv() error {
 			c.cfgData.GoCache.DefaultExpiration = value
 		}
 
-	case GOREDIS_DRIVER:
+	case REDIS_DRIVER:
 		// Go-redis settings
 		log.Print("Setting go-redis environment variables...")
-		c.cfgData.GoRedis.Host = os.Getenv(GOREDIS_HOST)
-		c.cfgData.GoRedis.Port = os.Getenv(GOREDIS_PORT)
-		c.cfgData.GoRedis.Password = os.Getenv(GOREDIS_PASSWORD)
+		c.cfgData.Redis.TLS_URL = os.Getenv(REDIS_TLS_URL)
+		c.cfgData.Redis.URL = os.Getenv(REDIS_URL)
+		c.cfgData.Redis.Port = os.Getenv(REDIS_PORT)
 
-	case MYSQL_DRIVER:
-		// MySQL settings
-		c.cfgData.MySQL.Connection = os.Getenv(MYSQL_CONNECTION)
+		if c.cfgData.Env == PRODUCTION {
+			redisURL, parseErr := url.Parse(c.cfgData.Redis.URL)
+			if parseErr != nil {
+				log.Print("Error parsing url: ", parseErr)
+				return parseErr
+			}
+
+			// Update URL and Port after parsing
+			c.cfgData.Redis.URL = redisURL.Host
+			c.cfgData.Redis.Port = ":" + redisURL.Port()
+		}
+
+		c.cfgData.Redis.URL = os.Getenv(REDIS_URL)
+		c.cfgData.Redis.Port = os.Getenv(REDIS_PORT)
+		c.cfgData.Redis.Password = os.Getenv(REDIS_PASSWORD)
 
 	case POSTGRESQL_DRIVER:
 		// PostGres settings
