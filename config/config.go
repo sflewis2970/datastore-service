@@ -188,6 +188,13 @@ func (c *config) getConfigEnv() error {
 			}
 
 			// Update URL and Port after parsing
+			delimiter := ":"
+			if strings.Contains(redisURL.Host, delimiter) {
+				urlSlice := strings.Split(redisURL.Host, delimiter)
+				c.cfgData.Redis.URL = urlSlice[0]
+				c.cfgData.Redis.Port = ":" + urlSlice[1]
+			}
+
 			c.cfgData.Redis.URL = redisURL.Host
 			c.cfgData.Redis.Port = ":" + redisURL.Port()
 
