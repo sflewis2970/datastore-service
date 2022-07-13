@@ -157,6 +157,8 @@ func GetRedisModel(cfgData *config.ConfigData) *dbModel {
 	// Once the external packages access the values, the environment has lready been taken
 	// care of.
 	addr := redisModel.cfgData.Redis.URL + redisModel.cfgData.Redis.Port
+	log.Print("redis URL...: ", redisModel.cfgData.Redis.URL)
+	log.Print("redis Port...: ", redisModel.cfgData.Redis.Port)
 	log.Print("The redis address is...: ", addr)
 
 	redisOptions = &redis.Options{
