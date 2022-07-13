@@ -10,7 +10,7 @@ services:
       - cache:/data
 
   dsapi:
-    image: ds-service
+    image: sflewis/datastore-service
     container_name: CNT-DSService
     depends_on: 
       - cache
@@ -20,9 +20,10 @@ services:
       HOSTNAME:
       HOSTPORT: :9090
       ACTIVEDRIVER: goredis
-      GOREDIS_HOST: cache
-      GOREDIS_PORT: :6379
-      GOREDIS_PASSWORD: 
+      REDIS_TLS_URL: cache
+      REDIS_URL: cache
+      REDIS_PORT: :6379
+      REDIS_PASSWORD: 
 
 volumes:
   cache:
